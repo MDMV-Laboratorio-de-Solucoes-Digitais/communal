@@ -1,1 +1,34 @@
-/target
+# Rust build artefacts
+/target/
+**/*.rs.bk
+*.rlib
+*.prof*
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets / env overrides
+.env
+.env.*
+!.env.example
+
+# Cargo lock for libraries (workspace binary `cargo` keeps the lockfile in version control)
+# Uncomment if the project is ever split into publishable sub-crates:
+# Cargo.lock
+
+# Generated dependency-graph snapshots (run `graphify update .` to refresh)
+graphify-out/
+
+# Scratch / agent session artefacts
+.commandcode/
+.specify/
+.agents/
+.prompts/
+.omo

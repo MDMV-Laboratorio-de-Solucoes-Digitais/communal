@@ -8,23 +8,23 @@ repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
 readme = "README.md"
-description = "High-performance community detection framework in pure Rust with petgraph and dynamic graph support."
+description.workspace = true
 keywords = ["graph", "community-detection", "leiden", "louvain", "graphrag"]
 categories = ["algorithms", "data-structures", "science"]
 
 [workspace]
 members = [
-    "communal-core",
-    "communal-algo",
-    "communal-dynamic",
-    "communal-petgraph",
-    "communal-metrics",
-    "communal-generators",
-    "communal-wasm",
-    "communal-cli",
-    "communal-tui",
-    "communal-frontend",
-    "benches/"
+    "crates/communal-core",
+    "crates/communal-algo",
+    "crates/communal-dynamic",
+    "crates/communal-petgraph",
+    "crates/communal-metrics",
+    "crates/communal-generators",
+    "crates/communal-wasm",
+    "crates/communal-cli",
+    "crates/communal-tui",
+    "crates/communal-frontend",
+    "crates/communal-benches",
 ]
 resolver = "3"
 
@@ -32,19 +32,11 @@ resolver = "3"
 version = "0.1.0"
 edition = "2024"
 authors = ["MDMV - Laboratório de Soluções Digitais"]
-license = "Apache-2.0"
-description = "Communal: Community detection algorithms."
+license = "MIT OR Apache-2.0"
+description = "High-performance community detection framework in pure Rust with petgraph and dynamic graph support."
 repository = "https://github.com/MDMV-Laboratorio-de-Solucoes-Digitais/communal"
 homepage = "https://github.com/MDMV-Laboratorio-de-Solucoes-Digitais/communal"
 documentation = "https://docs.rs/communal"
-
-[workspace.dependencies]
-communal-core = { path = "crates/communal-core", version = "0.1.0" }
-communal-algo = { path = "crates/communal-algo", version = "0.1.0" }
-communal-dynamic = { path = "crates/communal-dynamic", version = "0.1.0" }
-communal-petgraph = { path = "crates/communal-petgraph", version = "0.1.0" }
-communal-metrics = { path = "crates/communal-metrics", version = "0.1.0" }
-communal-generators = { path = "crates/communal-generators", version = "0.1.0" }
 
 
 petgraph = { version = "0.8.3", default-features = false }
@@ -57,6 +49,8 @@ crossterm = "0.29.0"
 wasm-bindgen = "0.2"
 proptest = "1.6"
 criterion = { version = "0.8.2", features = ["html_reports"] }
+num-traits = "0.2.19"
+tracing = "0.1.44"
 
 [dependencies]
 communal-core = { workspace = true }
@@ -147,4 +141,7 @@ print_stdout = "warn"                 # Restricts print!/println! (use the `trac
 use_self = "deny"                     # Forces the use of `Self` in implementations for clean refactoring
 wildcard_dependencies = "deny"        # Forbids `crate = "*"` type dependencies in Cargo.toml
 cargo = { level = "warn", priority = -1 }
-multiple_crate_versions = "warn"      # Forbids having multiple versions of the same crate compiled
+multiple_crate_versions = "deny"      # Forbids having multiple versions of the same crate compiled
+
+[lints]
+workspace = true
