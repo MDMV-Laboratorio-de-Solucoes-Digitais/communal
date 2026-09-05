@@ -1,14 +1,33 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![deny(unsafe_code)]
+#![deny(missing_docs)]
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+#![deny(clippy::panic)]
+#![deny(clippy::todo)]
+#![deny(clippy::unimplemented)]
+#![deny(clippy::allow_attributes_without_reason)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+//! Foundational types and traits for the communal community detection framework.
+//!
+//! This crate provides the core abstractions — graph views, node/community IDs,
+//! error types, configuration traits, and algorithm interfaces — that all other
+//! crates in the workspace depend on.
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// Algorithm configuration traits and convergence modes.
+pub mod config;
+/// Compressed Sparse Row graph representation.
+pub mod csr;
+/// Community detector trait.
+pub mod detector;
+/// Domain error types.
+pub mod error;
+/// Core graph view trait.
+pub mod graph_view;
+/// Node and community identifier newtypes.
+pub mod id;
+/// Partition data structure.
+pub mod partition;
+/// Quality and comparative metric traits.
+pub mod quality;
+/// Algorithm step events for observability.
+pub mod step;

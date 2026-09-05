@@ -10,6 +10,9 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
+num-traits = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
 
 [lints]
 workspace = true
