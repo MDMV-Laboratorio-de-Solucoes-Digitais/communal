@@ -4,12 +4,14 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "Community detection algorithms (Leiden, Louvain, Infomap, LPA, Fluid)"
 repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
 
 [dependencies]
+communal-core = { path = "../communal-core" }
+rayon = { workspace = true }
+rand = "0.9"
+tracing = { workspace = true }
 
 [lints]
 workspace = true

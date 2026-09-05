@@ -1,14 +1,19 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![deny(unsafe_code)]
+#![deny(missing_docs)]
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+#![deny(clippy::panic)]
+#![deny(clippy::todo)]
+#![deny(clippy::unimplemented)]
+#![deny(clippy::allow_attributes_without_reason)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+//! Community detection algorithms (Leiden, Louvain, Infomap, LPA, Fluid).
+//!
+//! This crate provides implementations of several community detection algorithms
+//! that operate on any graph type implementing the `GraphView` trait from
+//! `communal-core`.
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// Leiden algorithm implementation.
+pub mod leiden;
+/// Quality functions for evaluating community partitions.
+pub mod quality;
