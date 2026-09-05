@@ -4,12 +4,15 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "Command-line interface for community detection"
 repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
 
 [dependencies]
+communal-core = { path = "../communal-core" }
+communal-algo = { path = "../communal-algo" }
+communal-metrics = { path = "../communal-metrics" }
+clap = { version = "4.5", features = ["derive"] }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

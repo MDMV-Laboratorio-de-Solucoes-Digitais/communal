@@ -4,12 +4,12 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "petgraph integration for community detection"
 repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
 
 [dependencies]
+communal-core = { path = "../communal-core" }
+petgraph = { workspace = true }
 
 [lints]
 workspace = true

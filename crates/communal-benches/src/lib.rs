@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Benchmark harness for community detection algorithms.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![deny(unsafe_code)]
+#![deny(missing_docs)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+/// Placeholder benchmark function.
+pub fn run_benchmarks() {
+    // Benchmarks implemented via criterion in benches/ directory
 }

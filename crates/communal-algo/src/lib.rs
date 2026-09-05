@@ -27,3 +27,7 @@ pub mod louvain;
 pub mod quality;
 /// Deterministic tie-breaking utilities.
 pub mod tie_breaking;
+/// Stepping mode for resumable and observable algorithm execution.
+pub mod stepping;
+/// Subscription handle for event observer registration.
+pub mod subscribe;

@@ -4,12 +4,13 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "Incremental dynamic graph updates for community detection"
 repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
 
 [dependencies]
+communal-core = { path = "../communal-core" }
+communal-algo = { path = "../communal-algo" }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true
