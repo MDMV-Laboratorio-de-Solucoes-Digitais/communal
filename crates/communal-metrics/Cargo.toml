@@ -4,12 +4,11 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "Evaluation metrics for community detection"
 repository.workspace = true
-homepage.workspace = true
-documentation.workspace = true
 
 [dependencies]
+communal-core = { path = "../communal-core" }
 
 [lints]
 workspace = true

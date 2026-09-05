@@ -13,7 +13,17 @@
 //! that operate on any graph type implementing the `GraphView` trait from
 //! `communal-core`.
 
+/// Fluid Communities algorithm implementation.
+pub mod fluid;
+/// Infomap algorithm implementation.
+pub mod infomap;
 /// Leiden algorithm implementation.
 pub mod leiden;
+/// Label Propagation Algorithm implementation.
+pub mod lpa;
+/// Louvain algorithm implementation.
+pub mod louvain;
 /// Quality functions for evaluating community partitions.
 pub mod quality;
+/// Deterministic tie-breaking utilities.
+pub mod tie_breaking;

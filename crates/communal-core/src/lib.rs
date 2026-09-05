@@ -31,3 +31,11 @@ pub mod partition;
 pub mod quality;
 /// Algorithm step events for observability.
 pub mod step;
+/// Graph builder with fluent construction API.
+pub mod builder;
+/// Graph traversal algorithms (BFS, DFS).
+pub mod traversal;
+/// Edge weight symmetrization utilities.
+pub mod symmetrize;
+/// Graph input/output utilities.
+pub mod io;
