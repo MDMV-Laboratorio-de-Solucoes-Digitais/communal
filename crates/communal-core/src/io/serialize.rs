@@ -14,16 +14,17 @@ pub fn serialize_graph<G: GraphView>(graph: &G) -> String {
     output
 }
 
-/// Serializes a partition to "node_id community_id" format.
+/// Serializes a partition to `node_id` `community_id` format.
 ///
 /// Each line contains a node index and its assigned community ID separated by
 /// a single space. Lines are separated by newlines.
+#[must_use]
 pub fn serialize_partition(partition: &Partition) -> String {
     partition
         .membership_vec()
         .iter()
         .enumerate()
-        .map(|(node, community)| format!("{} {}", node, community))
+        .map(|(node, community)| format!("{node} {community}"))
         .collect::<Vec<_>>()
         .join("\n")
 }

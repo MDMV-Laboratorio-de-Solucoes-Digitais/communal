@@ -11,6 +11,7 @@ pub struct IncrementalUpdate;
 
 impl IncrementalUpdate {
     /// Creates a new incremental update handler.
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
@@ -26,7 +27,7 @@ impl IncrementalUpdate {
     ///
     /// * `graph` - The current graph view.
     /// * `partition` - The partition to update in place.
-    /// * `_affected_nodes` - Nodes whose communities may need updating.
+    /// * `affected_nodes` - Nodes whose communities may need updating.
     ///
     /// # Errors
     ///
@@ -35,9 +36,9 @@ impl IncrementalUpdate {
         &self,
         graph: &G,
         partition: &mut Partition,
-        _affected_nodes: &[u32],
+        affected_nodes: &[u32],
     ) -> Result<(), GraphError> {
-        let _ = (graph, partition, _affected_nodes);
+        let _ = (graph, partition, affected_nodes);
         Ok(())
     }
 }

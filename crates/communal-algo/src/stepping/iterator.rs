@@ -13,16 +13,19 @@ pub struct StepIterator {
 
 impl StepIterator {
     /// Creates a new step iterator from a list of events.
+    #[must_use]
     pub fn new(events: Vec<StepEvent>) -> Self {
         Self { events, position: 0 }
     }
 
     /// Returns the current position within the event stream.
+    #[must_use]
     pub fn position(&self) -> usize {
         self.position
     }
 
     /// Returns `true` if there are more events to consume.
+    #[must_use]
     pub fn has_next(&self) -> bool {
         self.position < self.events.len()
     }

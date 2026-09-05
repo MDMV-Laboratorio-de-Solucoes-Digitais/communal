@@ -27,6 +27,7 @@ impl MapEquation {
     /// # Arguments
     ///
     /// * `teleportation_rate` - Probability of random teleportation (typically 0.15).
+    #[must_use]
     pub fn new(teleportation_rate: f64) -> Self {
         Self {
             teleportation_rate: teleportation_rate.clamp(0.0, 1.0),

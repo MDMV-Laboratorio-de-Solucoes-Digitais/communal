@@ -34,6 +34,11 @@ pub trait AlgorithmConfig {
     }
 
     /// Validates the configuration, returning an error if invalid.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AlgorithmError::InvalidConfiguration`] if the configuration
+    /// parameters are invalid or mutually inconsistent.
     fn validate(&self) -> Result<(), AlgorithmError> {
         Ok(())
     }

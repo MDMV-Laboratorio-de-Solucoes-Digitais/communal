@@ -1,6 +1,9 @@
 use communal_core::step::StepEvent;
 use std::fmt;
 
+/// A listener callback type for [`EventEmitter`].
+pub type StepListener = Box<dyn Fn(&StepEvent) + Send>;
+
 /// Emits events to registered observer listeners.
 ///
 /// `EventEmitter` maintains a list of closures that are each invoked whenever
@@ -8,7 +11,7 @@ use std::fmt;
 /// [`subscribe`](Self::subscribe).
 #[derive(Default)]
 pub struct EventEmitter {
-    listeners: Vec<Box<dyn Fn(&StepEvent) + Send>>,
+    listeners: Vec<StepListener>,
 }
 
 impl fmt::Debug for EventEmitter {
@@ -21,12 +24,13 @@ impl fmt::Debug for EventEmitter {
 
 impl EventEmitter {
     /// Creates a new, empty event emitter.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Registers a listener closure that will be called on every emitted event.
-    pub fn subscribe(&mut self, listener: Box<dyn Fn(&StepEvent) + Send>) {
+    pub fn subscribe(&mut self, listener: StepListener) {
         self.listeners.push(listener);
     }
 

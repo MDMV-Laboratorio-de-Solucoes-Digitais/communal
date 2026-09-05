@@ -1,6 +1,9 @@
 use crate::csr::CsrGraph;
 use crate::error::GraphError;
 
+/// The return type of [`parse_edgelist`]: edges and node count.
+pub type ParsedEdgelist = (Vec<(u32, u32, f64)>, usize);
+
 /// Parses an edge list format: "source target weight" per line.
 ///
 /// Each non-empty, non-comment line must contain at least two whitespace-separated
@@ -18,7 +21,7 @@ use crate::error::GraphError;
 /// Returns [`GraphError::InvalidGraph`] if a line has fewer than two values or
 /// contains an unparseable node index. Returns [`GraphError::NegativeWeight`]
 /// if any weight is negative.
-pub fn parse_edgelist(input: &str) -> Result<(Vec<(u32, u32, f64)>, usize), GraphError> {
+pub fn parse_edgelist(input: &str) -> Result<ParsedEdgelist, GraphError> {
     let mut edges = Vec::new();
     let mut max_node = 0u32;
     for (line_num, line) in input.lines().enumerate() {
@@ -38,7 +41,7 @@ pub fn parse_edgelist(input: &str) -> Result<(Vec<(u32, u32, f64)>, usize), Grap
         let to: u32 = parts[1].parse().map_err(|_| GraphError::InvalidGraph {
             reason: format!("line {}: invalid target node", line_num + 1),
         })?;
-        let weight: f64 = parts.get(2).map(|s| s.parse().unwrap_or(1.0)).unwrap_or(1.0);
+        let weight: f64 = parts.get(2).map_or(1.0, |s| s.parse().unwrap_or(1.0));
         if weight < 0.0 {
             return Err(GraphError::NegativeWeight { from, to, weight });
         }

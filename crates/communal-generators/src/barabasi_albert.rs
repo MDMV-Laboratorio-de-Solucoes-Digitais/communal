@@ -36,6 +36,7 @@ pub struct BarabasiAlbertGenerator {
 
 impl BarabasiAlbertGenerator {
     /// Creates a new Barabási-Albert generator with the given configuration.
+    #[must_use]
     pub fn new(config: BaConfig) -> Self {
         Self { config }
     }
@@ -43,6 +44,7 @@ impl BarabasiAlbertGenerator {
     /// Generates a graph according to the Barabási-Albert model.
     ///
     /// Currently returns an empty graph placeholder.
+    #[must_use]
     pub fn generate(&self) -> CsrGraph {
         let _ = &self.config;
         CsrGraph::from_edges(&[], 0)

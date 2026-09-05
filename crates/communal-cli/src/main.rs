@@ -64,7 +64,7 @@ fn main() {
             gamma,
             seed,
         } => {
-            println!("Running {} on {}", algorithm, input);
+            println!("Running {algorithm} on {input}");
             let _ = (output, gamma, seed);
         }
         Commands::Compare { input, algorithms } => {

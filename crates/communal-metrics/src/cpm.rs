@@ -22,6 +22,7 @@ impl ConstantPottsModel {
     /// # Arguments
     ///
     /// * `gamma` - Resolution parameter controlling the community size preference.
+    #[must_use]
     pub fn new(gamma: f64) -> Self {
         Self { gamma }
     }

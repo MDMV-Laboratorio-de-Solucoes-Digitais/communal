@@ -17,11 +17,13 @@ impl NodeId {
     }
 
     /// Returns the internal index as `usize`.
+    #[must_use]
     pub fn index(self) -> usize {
         self.0.get() as usize
     }
 
     /// Returns the raw `NonZeroU32` value.
+    #[must_use]
     pub fn raw(self) -> NonZeroU32 {
         self.0
     }
@@ -43,6 +45,7 @@ impl CommunityId {
     }
 
     /// Returns the internal index as `usize`.
+    #[must_use]
     pub fn index(self) -> usize {
         self.0.get() as usize
     }

@@ -37,6 +37,7 @@ impl Modularity {
     /// # Arguments
     ///
     /// * `gamma` — Resolution parameter; higher values produce smaller communities.
+    #[must_use]
     pub fn new(gamma: f64) -> Self {
         Self { gamma }
     }
@@ -44,7 +45,7 @@ impl Modularity {
 
 impl QualityMetric for Modularity {
     fn evaluate(&self, graph: &impl GraphView, partition: &Partition) -> Result<f64, MetricsError> {
-        let m = graph.edge_count() as f64;
+        let m = f64::from(u32::try_from(graph.edge_count()).unwrap_or(u32::MAX));
         if m == 0.0 {
             return Ok(0.0);
         }
@@ -79,6 +80,7 @@ impl Cpm {
     /// # Arguments
     ///
     /// * `gamma` — Resolution parameter controlling the null model penalty.
+    #[must_use]
     pub fn new(gamma: f64) -> Self {
         Self { gamma }
     }

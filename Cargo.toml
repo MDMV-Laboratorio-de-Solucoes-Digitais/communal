@@ -38,7 +38,18 @@ repository = "https://github.com/MDMV-Laboratorio-de-Solucoes-Digitais/communal"
 homepage = "https://github.com/MDMV-Laboratorio-de-Solucoes-Digitais/communal"
 documentation = "https://docs.rs/communal"
 
-
+[workspace.dependencies]
+communal-core = { path = "crates/communal-core" }
+communal-algo = { path = "crates/communal-algo" }
+communal-dynamic = { path = "crates/communal-dynamic" }
+communal-petgraph = { path = "crates/communal-petgraph" }
+communal-metrics = { path = "crates/communal-metrics" }
+communal-generators = { path = "crates/communal-generators" }
+communal-wasm = { path = "crates/communal-wasm" }
+communal-cli = { path = "crates/communal-cli" }
+communal-tui = { path = "crates/communal-tui" }
+communal-frontend = { path = "crates/communal-frontend" }
+communal-benches = { path = "crates/communal-benches" }
 petgraph = { version = "0.8.3", default-features = false }
 rayon = "1.10"
 thiserror = "2.0"

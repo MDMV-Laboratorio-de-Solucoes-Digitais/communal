@@ -10,11 +10,13 @@ pub struct Subscription {
 
 impl Subscription {
     /// Creates a new, active subscription.
+    #[must_use]
     pub fn new() -> Self {
         Self { active: true }
     }
 
     /// Returns `true` if the subscription is still active.
+    #[must_use]
     pub fn is_active(&self) -> bool {
         self.active
     }

@@ -27,6 +27,7 @@ pub struct Infomap {
 
 impl Infomap {
     /// Creates a new Infomap detector with the given configuration.
+    #[must_use]
     pub fn new(config: InfomapConfig) -> Self {
         Self { config }
     }
@@ -38,7 +39,7 @@ impl<G: GraphView> CommunityDetector<G> for Infomap {
             return Ok(Partition::new(Vec::new(), 0.0));
         }
         let mut _rng = StdRng::seed_from_u64(self.config.seed.unwrap_or(42));
-        let membership: Vec<u32> = (0..graph.node_count() as u32).collect();
+        let membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
         Ok(Partition::new(membership, 0.0))
     }
 }

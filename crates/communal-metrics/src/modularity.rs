@@ -23,6 +23,7 @@ impl Modularity {
     /// # Arguments
     ///
     /// * `gamma` - Resolution parameter. A value of 1.0 gives standard modularity.
+    #[must_use]
     pub fn new(gamma: f64) -> Self {
         Self { gamma }
     }
@@ -30,7 +31,7 @@ impl Modularity {
 
 impl QualityMetric for Modularity {
     fn evaluate(&self, graph: &impl GraphView, partition: &Partition) -> Result<f64, MetricsError> {
-        let m = graph.edge_count() as f64;
+        let m = f64::from(u32::try_from(graph.edge_count()).unwrap_or(u32::MAX));
         if m == 0.0 {
             return Ok(0.0);
         }

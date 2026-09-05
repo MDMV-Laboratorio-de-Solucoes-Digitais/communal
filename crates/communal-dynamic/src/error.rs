@@ -33,9 +33,9 @@ impl From<DynamicOperationError> for communal_core::error::PartitionError {
     fn from(e: DynamicOperationError) -> Self {
         match e {
             DynamicOperationError::InvalidLevel { level } => {
-                communal_core::error::PartitionError::InvalidLevel { level }
+                Self::InvalidLevel { level }
             }
-            _ => communal_core::error::PartitionError::InvalidNodeId { index: 0 },
+            _ => Self::InvalidNodeId { index: 0 },
         }
     }
 }

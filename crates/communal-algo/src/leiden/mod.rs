@@ -29,6 +29,7 @@ pub struct Leiden {
 
 impl Leiden {
     /// Creates a new Leiden detector with the given configuration.
+    #[must_use]
     pub fn new(config: LeidenConfig) -> Self {
         Self {
             config,
@@ -37,12 +38,14 @@ impl Leiden {
     }
 
     /// Sets the quality function to use.
+    #[must_use]
     pub fn with_quality_function(mut self, qf: QualityFunction) -> Self {
         self.quality_function = qf;
         self
     }
 
     /// Runs the smart local moving phase.
+    #[expect(clippy::unused_self, reason = "placeholder for future implementation")]
     fn local_moving<G: GraphView>(
         &self,
         graph: &G,
@@ -55,6 +58,7 @@ impl Leiden {
     }
 
     /// Runs the randomized refinement phase.
+    #[expect(clippy::unused_self, reason = "placeholder for future implementation")]
     fn refinement<G: GraphView>(
         &self,
         graph: &G,
@@ -66,6 +70,7 @@ impl Leiden {
     }
 
     /// Runs the aggregation phase.
+    #[expect(clippy::unused_self, reason = "placeholder for future implementation")]
     fn aggregation<G: GraphView>(
         &self,
         graph: &G,
@@ -84,7 +89,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         }
 
         let mut rng = StdRng::seed_from_u64(self.config.seed.unwrap_or(42));
-        let mut membership: Vec<u32> = (0..graph.node_count() as u32).collect();
+        let mut membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
 
         for iteration in 0..self.config.max_iterations {
             let improved = self.local_moving(graph, &mut membership, &mut rng);
@@ -105,8 +110,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
                 m.evaluate(graph, &Partition::new(membership.clone(), 0.0))
                     .unwrap_or(0.0)
             }
-            QualityFunction::Cpm => 0.0,
-            QualityFunction::MapEquation => 0.0,
+            QualityFunction::Cpm | QualityFunction::MapEquation => 0.0,
         };
 
         Ok(Partition::new(membership, quality))
@@ -121,6 +125,7 @@ pub mod convergence {
     ///
     /// Returns `true` when the quality improvement between iterations falls
     /// below the configured threshold in the specified convergence mode.
+    #[must_use]
     pub fn has_converged(
         current_quality: f64,
         previous_quality: f64,
@@ -142,6 +147,7 @@ pub mod convergence {
     /// Computes the plateau threshold from the convergence threshold.
     ///
     /// Formula: `max(convergence_threshold / 10, 1e-8)`
+    #[must_use]
     pub fn plateau_threshold(convergence_threshold: f64) -> f64 {
         (convergence_threshold / 10.0).max(1e-8)
     }

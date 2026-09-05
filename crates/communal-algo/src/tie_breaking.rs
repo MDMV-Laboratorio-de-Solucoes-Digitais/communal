@@ -18,15 +18,20 @@ use communal_core::id::NodeId;
 /// # Returns
 ///
 /// The selected `NodeId`, or `None` if `nodes` is empty.
+///
+/// # Panics
+///
+/// Panics if `seed` is `Some` but the internal unwrap fails (should never happen).
+#[must_use]
 pub fn break_tie(nodes: &[NodeId], seed: Option<u64>) -> Option<NodeId> {
     if nodes.is_empty() {
         return None;
     }
-    if seed.is_some() {
+    if let Some(seed) = seed {
         // With seed: use seeded random selection
         use rand::SeedableRng;
         use rand::prelude::IndexedRandom;
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed.unwrap());
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
         nodes.choose(&mut rng).copied()
     } else {
         // Without seed: lexicographic minimum

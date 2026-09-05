@@ -16,6 +16,7 @@ impl HierarchicalTree {
     /// # Arguments
     ///
     /// * `levels` - Partitions ordered from finest to coarsest resolution.
+    #[must_use]
     pub fn new(levels: Vec<Partition>) -> Self {
         Self { levels }
     }
@@ -34,11 +35,13 @@ impl HierarchicalTree {
     }
 
     /// Returns all hierarchy levels as a slice.
+    #[must_use]
     pub fn levels(&self) -> &[Partition] {
         &self.levels
     }
 
     /// Returns the number of hierarchy levels.
+    #[must_use]
     pub fn level_count(&self) -> usize {
         self.levels.len()
     }

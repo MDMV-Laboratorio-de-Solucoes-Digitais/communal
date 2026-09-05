@@ -45,10 +45,8 @@ pub trait StreamingDetector<G: GraphView>: CommunityDetector<G> {
     ) -> Result<Partition, GraphError> {
         let mut last = None;
         for mutation in mutations {
-            match self.apply_mutation(graph, mutation) {
-                Ok(partition) => last = Some(partition),
-                Err(e) => return Err(e),
-            }
+            let partition = self.apply_mutation(graph, mutation)?;
+            last = Some(partition);
         }
         last.ok_or(GraphError::EmptyGraph)
     }

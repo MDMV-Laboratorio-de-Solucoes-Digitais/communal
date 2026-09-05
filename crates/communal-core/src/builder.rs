@@ -28,6 +28,7 @@ impl GraphBuilder {
     /// Creates a new `GraphBuilder` with default settings.
     ///
     /// Defaults to validation enabled and undirected graph construction.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             validate: true,
@@ -41,6 +42,7 @@ impl GraphBuilder {
     /// to return an error.
     ///
     /// [`from_edges`]: Self::from_edges
+    #[must_use]
     pub fn validate(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
@@ -49,6 +51,7 @@ impl GraphBuilder {
     /// Sets whether the graph should be treated as undirected.
     ///
     /// When enabled (the default), edges are added in both directions.
+    #[must_use]
     pub fn undirected(mut self, undirected: bool) -> Self {
         self.undirected = undirected;
         self

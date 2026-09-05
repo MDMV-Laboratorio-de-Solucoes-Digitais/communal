@@ -35,6 +35,7 @@ pub struct ErdosRenyiGenerator {
 
 impl ErdosRenyiGenerator {
     /// Creates a new Erdős-Rényi generator with the given configuration.
+    #[must_use]
     pub fn new(config: ErConfig) -> Self {
         Self { config }
     }
@@ -42,6 +43,7 @@ impl ErdosRenyiGenerator {
     /// Generates a graph according to the Erdős-Rényi model.
     ///
     /// Currently returns an empty graph placeholder.
+    #[must_use]
     pub fn generate(&self) -> CsrGraph {
         let _ = &self.config;
         CsrGraph::from_edges(&[], 0)

@@ -27,6 +27,7 @@ impl CsrGraph {
     /// # Panics
     ///
     /// Panics if any node index in `edges` is >= `node_count`.
+    #[must_use]
     pub fn from_edges(edges: &[(u32, u32, f64)], node_count: usize) -> Self {
         let mut degrees = vec![0u32; node_count];
         for (from, to, _) in edges {
@@ -83,7 +84,8 @@ impl GraphView for CsrGraph {
         let end = self.row_ptr[idx + 1] as usize;
         self.col_idx[start..end]
             .iter()
-            .map(|&i| NodeId::new(i).unwrap())
+            .copied()
+            .filter_map(NodeId::new)
     }
 
     fn edge_weight(&self, from: NodeId, to: NodeId) -> Option<f64> {

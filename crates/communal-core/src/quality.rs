@@ -10,6 +10,11 @@ pub trait QualityMetric {
     /// Evaluates the quality of a partition on the given graph.
     ///
     /// Returns a `f64` score or a [`MetricsError`] if computation fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MetricsError`] if the partition is empty, has a size mismatch
+    /// with the graph, or encounters a numerical overflow during computation.
     fn evaluate(&self, graph: &impl GraphView, partition: &Partition) -> Result<f64, MetricsError>;
 
     /// Human-readable name of the metric (e.g., `"Modularity"`).
@@ -27,6 +32,11 @@ pub trait ComparativeMetric {
     /// Compares two partitions on the given graph.
     ///
     /// Returns a `f64` score or a [`MetricsError`] if computation fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MetricsError`] if either partition is empty, has a size mismatch
+    /// with the graph, or encounters a numerical overflow during computation.
     fn evaluate(
         &self,
         graph: &impl GraphView,

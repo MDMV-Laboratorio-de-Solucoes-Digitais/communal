@@ -12,6 +12,11 @@ pub trait CommunityDetector<G: GraphView> {
     ///
     /// Returns a [`Partition`] with community assignments and quality score,
     /// or a [`GraphError`] if detection fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError`] if the graph is malformed or the algorithm
+    /// encounters an error during execution.
     fn detect(&self, graph: &G) -> Result<Partition, GraphError>;
 
     /// Detects communities into a pre-allocated partition.
@@ -19,6 +24,11 @@ pub trait CommunityDetector<G: GraphView> {
     /// This is useful when reusing partition memory across multiple runs.
     /// The default implementation calls [`Self::detect`] and overwrites
     /// the target partition.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError`] if the graph is malformed or the algorithm
+    /// encounters an error during execution.
     fn detect_into(&self, graph: &G, partition: &mut Partition) -> Result<(), GraphError> {
         let result = self.detect(graph)?;
         *partition = result;

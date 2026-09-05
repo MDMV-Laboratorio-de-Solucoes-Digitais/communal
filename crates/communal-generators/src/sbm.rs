@@ -42,6 +42,7 @@ pub struct SbmGenerator {
 
 impl SbmGenerator {
     /// Creates a new SBM generator with the given configuration.
+    #[must_use]
     pub fn new(config: SbmConfig) -> Self {
         Self { config }
     }
@@ -49,6 +50,7 @@ impl SbmGenerator {
     /// Generates a graph according to the Stochastic Block Model.
     ///
     /// Currently returns an empty graph placeholder.
+    #[must_use]
     pub fn generate(&self) -> CsrGraph {
         let _ = &self.config;
         CsrGraph::from_edges(&[], 0)

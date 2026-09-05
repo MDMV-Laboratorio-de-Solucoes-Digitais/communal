@@ -47,6 +47,7 @@ pub struct LfrGenerator {
 
 impl LfrGenerator {
     /// Creates a new LFR generator with the given configuration.
+    #[must_use]
     pub fn new(config: LfrConfig) -> Self {
         Self { config }
     }
@@ -54,6 +55,7 @@ impl LfrGenerator {
     /// Generates a graph according to the LFR benchmark model.
     ///
     /// Currently returns an empty graph placeholder.
+    #[must_use]
     pub fn generate(&self) -> CsrGraph {
         let _ = &self.config;
         CsrGraph::from_edges(&[], 0)
