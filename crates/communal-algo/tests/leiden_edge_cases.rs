@@ -8,7 +8,6 @@ use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
-use communal_core::error::GraphError;
 use communal_core::id::NodeId;
 
 // ---------------------------------------------------------------------------
@@ -48,17 +47,16 @@ fn community_of(partition: &communal_core::partition::Partition, node_idx: usize
 // Tests
 // ---------------------------------------------------------------------------
 
-/// An empty graph (0 nodes) should return an [`GraphError::EmptyGraph`] error
+/// An empty graph (0 nodes) should return a valid empty partition
 /// rather than panicking or returning a garbage partition.
 #[test]
 fn test_empty_graph() {
     let detector = create_detector();
     let graph = CsrGraph::from_edges(&[], 0);
 
-    match detector.detect(&graph) {
-        Err(GraphError::EmptyGraph) => {} // expected
-        other => panic!("Expected EmptyGraph error, got {:?}", other),
-    }
+    let partition = detector.detect(&graph).expect("empty graph should not error");
+    assert_eq!(partition.membership_vec().len(), 0);
+    assert_eq!(partition.quality_score(), 0.0);
 }
 
 /// A single node with a self-loop has positive total weight and should be
