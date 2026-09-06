@@ -48,16 +48,14 @@ impl CsrGraph {
         let mut cursor = row_ptr.clone();
 
         for (from, to, weight) in edges {
-            // NodeId is 1-based (NonZeroU32), so we store neighbor indices
-            // as 1-based values to match what `NodeId::new` expects.
             let pos = cursor[*from as usize] as usize;
-            col_idx[pos] = *to + 1;
+            col_idx[pos] = *to;
             weights[pos] = *weight;
             cursor[*from as usize] += 1;
 
             if *from != *to {
                 let pos = cursor[*to as usize] as usize;
-                col_idx[pos] = *from + 1;
+                col_idx[pos] = *from;
                 weights[pos] = *weight;
                 cursor[*to as usize] += 1;
             }
@@ -81,23 +79,25 @@ impl GraphView for CsrGraph {
     }
 
     fn neighbors(&self, node: NodeId) -> impl Iterator<Item = NodeId> {
-        // NodeId is 1-based; convert to 0-based for row_ptr indexing.
-        let idx = node.index().saturating_sub(1);
+        // NodeId is 1-based (NonZeroU32); convert to 0-based array index.
+        let idx = node.index() - 1;
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
         self.col_idx[start..end]
             .iter()
             .copied()
-            .filter_map(NodeId::new)
+            // col_idx stores 0-based indices from the edge list; convert back to 1-based NodeId.
+            .filter_map(|x| NodeId::new(x + 1))
     }
 
     fn edge_weight(&self, from: NodeId, to: NodeId) -> Option<f64> {
-        // NodeId is 1-based; convert to 0-based for row_ptr indexing.
-        let idx = from.index().saturating_sub(1);
+        // NodeId is 1-based (NonZeroU32); convert to 0-based array index.
+        let idx = from.index() - 1;
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
+        let to_0based = to.index() - 1;
         for i in start..end {
-            if self.col_idx[i] == to.raw().get() {
+            if self.col_idx[i] == to_0based as u32 {
                 return Some(self.weights[i]);
             }
         }
