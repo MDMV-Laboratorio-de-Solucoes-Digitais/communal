@@ -60,7 +60,10 @@ pub fn aggregation<G: GraphView>(graph: &G, membership: &[u32]) -> AggregationRe
         let source_community = membership[node_idx];
 
         for neighbor in graph.neighbors(node) {
-            let neighbor_idx = neighbor.index() - 1;
+            let neighbor_idx = neighbor.index().saturating_sub(1);
+            if neighbor_idx >= membership.len() {
+                continue;
+            }
             let target_community = membership[neighbor_idx];
             let weight = graph.edge_weight(node, neighbor).unwrap_or(0.0);
 
@@ -74,19 +77,29 @@ pub fn aggregation<G: GraphView>(graph: &G, membership: &[u32]) -> AggregationRe
         }
     }
 
+    // Remap sparse community IDs to contiguous 0-based indices for the reduced graph.
+    let mut comm_ids: Vec<u32> = community_to_nodes.keys().copied().collect();
+    comm_ids.sort_unstable();
+    let mut comm_to_idx: std::collections::HashMap<u32, u32> = std::collections::HashMap::new();
+    for (idx, &comm_id) in comm_ids.iter().enumerate() {
+        let idx_u32 = u32::try_from(idx).unwrap_or(u32::MAX);
+        let _ = comm_to_idx.insert(comm_id, idx_u32);
+    }
+
     let mut edges: Vec<(u32, u32, f64)> = Vec::new();
 
     for ((comm1, comm2), weight) in inter_community_weights {
-        edges.push((comm1, comm2, weight));
+        let idx1 = comm_to_idx[&comm1];
+        let idx2 = comm_to_idx[&comm2];
+        edges.push((idx1, idx2, weight));
         if comm1 != comm2 {
-            edges.push((comm2, comm1, weight));
+            edges.push((idx2, idx1, weight));
         }
     }
 
     let reduced_graph = CsrGraph::from_edges(
         &edges,
-        usize::try_from(u32::try_from(community_count).unwrap_or(u32::MAX))
-            .unwrap_or(usize::MAX),
+        community_count,
     );
 
     AggregationResult {

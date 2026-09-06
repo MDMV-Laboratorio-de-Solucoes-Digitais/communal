@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 1a4545a1a91dabf6e6a6d5bda554b08c4373f28e5b93ae06c0a0c936487654b0 # shrinks to (edges, node_count) = ([(0, 1, 0.51), (0, 2, 0.52), (1, 2, 0.53), (3, 4, 0.5700000000000001), (3, 5, 0.58), (4, 5, 0.59)], 6)

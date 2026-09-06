@@ -8,6 +8,7 @@
 
 use communal_algo::leiden::{Leiden, LeidenConfig};
 use communal_core::csr::CsrGraph;
+use communal_core::detector::CommunityDetector;
 use wasm_bindgen::prelude::*;
 
 /// Detect communities using the Leiden algorithm (WASM entry point).

@@ -25,9 +25,9 @@
 
 **Purpose**: Module structure and file organization
 
-[X] T001 Create leiden submodule files in `crates/communal-algo/src/leiden/` (local_moving.rs, refinement.rs, aggregation.rs, convergence.rs)
-[X] T002 Update `crates/communal-algo/src/leiden/mod.rs` to declare new submodules and export types
-[X] T003 Update `crates/communal-algo/src/lib.rs` to export leiden submodule if not already present
+- [ ] T001 Create leiden submodule files in `crates/communal-algo/src/leiden/` (local_moving.rs, refinement.rs, aggregation.rs, convergence.rs)
+- [ ] T002 Update `crates/communal-algo/src/leiden/mod.rs` to declare new submodules and export types
+- [ ] T003 Update `crates/communal-algo/src/lib.rs` to export leiden submodule if not already present
 
 ---
 
@@ -37,14 +37,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-[X] T004 [P] Implement `Modularity::evaluate()` in `crates/communal-algo/src/quality.rs` per research.md §1 (undirected Newman-Girvan with resolution parameter)
-[X] T005 [P] Implement `Cpm::evaluate()` in `crates/communal-algo/src/quality.rs` per research.md §2 (standard CPM formulation)
-[X] T006 [P] Implement `Modularity::delta_q()` in `crates/communal-algo/src/quality.rs` for local moving phase gain computation
-[X] T007 [P] Implement `Cpm::delta_q()` in `crates/communal-algo/src/quality.rs` for local moving phase gain computation
-[X] T008 Implement convergence detection in `crates/communal-algo/src/leiden/convergence.rs` (absolute mode only, plateau threshold `max(ε/10, 1e-8)` per research.md §5)
-[X] T009 Implement `LeidenConfig::validate()` in `crates/communal-algo/src/leiden/config.rs` (gamma > 0 with NaN/±Inf rejection, beta ∈ [0.0005, 0.1], threshold > 0; returns `AlgorithmError::InvalidConfiguration { reason }`)
-[X] T010 Implement graph validation in `crates/communal-algo/src/leiden/mod.rs` (check total weight m > 0 → `GraphError::InvalidGraph { reason }`, empty graph → `GraphError::EmptyGraph`)
-[X] T011 Implement `SteppingCallback` trait in `crates/communal-algo/src/leiden/mod.rs` (forward-only, Send bound per research.md §8)
+- [ ] T004 [P] Implement `Modularity::evaluate()` in `crates/communal-algo/src/quality.rs` per research.md §1 (undirected Newman-Girvan with resolution parameter)
+- [ ] T005 [P] Implement `Cpm::evaluate()` in `crates/communal-algo/src/quality.rs` per research.md §2 (standard CPM formulation)
+- [ ] T006 [P] Implement `Modularity::delta_q()` in `crates/communal-algo/src/quality.rs` for local moving phase gain computation
+- [ ] T007 [P] Implement `Cpm::delta_q()` in `crates/communal-algo/src/quality.rs` for local moving phase gain computation
+- [ ] T008 Implement convergence detection in `crates/communal-algo/src/leiden/convergence.rs` (absolute mode only, plateau threshold `max(ε/10, 1e-8)` per research.md §5)
+- [ ] T009 Implement `LeidenConfig::validate()` in `crates/communal-algo/src/leiden/config.rs` (gamma > 0 with NaN/±Inf rejection, beta ∈ [0.0005, 0.1], threshold > 0; returns `AlgorithmError::InvalidConfiguration { reason }`)
+- [ ] T010 Implement graph validation in `crates/communal-algo/src/leiden/mod.rs` (check total weight m > 0 → `GraphError::InvalidGraph { reason }`, empty graph → `GraphError::EmptyGraph`)
+- [ ] T011 Implement `SteppingCallback` trait in `crates/communal-algo/src/leiden/mod.rs` (forward-only, Send bound per research.md §8)
 
 **Checkpoint**: Foundation ready — quality functions, convergence, config validation, and callback trait available
 
@@ -58,11 +58,11 @@
 
 ### Implementation for User Story 1
 
-[X] T012 [P] [US1] Implement local moving phase in `crates/communal-algo/src/leiden/local_moving.rs` (seeded RNG for random node order, ΔQ computation, positive gain moves, connectedness preservation)
-[X] T013 [P] [US1] Implement refinement phase in `crates/communal-algo/src/leiden/refinement.rs` (singleton start, exp(β·Δ) weighted selection with beta parameter, subpartition guarantee, γ-connectivity)
-[X] T014 [P] [US1] Implement aggregation phase in `crates/communal-algo/src/leiden/aggregation.rs` (community-to-nodes mapping, inter-community edge sums, self-loop creation)
-[X] T015 [US1] Implement `Leiden::detect()` main loop in `crates/communal-algo/src/leiden/mod.rs` (initialize singletons, iterate phases, check convergence, return Partition)
-[X] T016 [US1] Add tracing event emission in `crates/communal-algo/src/leiden/mod.rs` and phase files. Event schemas: LocalMovingStart/End { iteration }, NodeRelocation { node, from, to }, RefinementSplit { community, into }, AggregationContraction { from_communities, to_communities }, ConvergencePlateau { iteration, improvement, current_quality }, ConvergenceDetected { total_iterations, final_quality }
+- [ ] T012 [P] [US1] Implement local moving phase in `crates/communal-algo/src/leiden/local_moving.rs` (seeded RNG for random node order, ΔQ computation, positive gain moves, connectedness preservation)
+- [ ] T013 [P] [US1] Implement refinement phase in `crates/communal-algo/src/leiden/refinement.rs` (singleton start, exp(β·Δ) weighted selection with beta parameter, subpartition guarantee, γ-connectivity)
+- [ ] T014 [P] [US1] Implement aggregation phase in `crates/communal-algo/src/leiden/aggregation.rs` (community-to-nodes mapping, inter-community edge sums, self-loop creation)
+- [ ] T015 [US1] Implement `Leiden::detect()` main loop in `crates/communal-algo/src/leiden/mod.rs` (initialize singletons, iterate phases, check convergence, return Partition)
+- [ ] T016 [US1] Add tracing event emission in `crates/communal-algo/src/leiden/mod.rs` and phase files. Event schemas: LocalMovingStart/End { iteration }, NodeRelocation { node, from, to }, RefinementSplit { community, into }, AggregationContraction { from_communities, to_communities }, ConvergencePlateau { iteration, improvement, current_quality }, ConvergenceDetected { total_iterations, final_quality }
 
 **Checkpoint**: Leiden produces connected communities — core differentiator delivered
 
@@ -76,12 +76,12 @@
 
 ### Implementation for User Story 2
 
-[X] T017 [US2] Verify seeded RNG integration in local moving and refinement phases produces deterministic output (cross-check T012/T013 implementation)
-[X] T018 [US2] Ensure community ID assignment is deterministic (contiguous by first-node-encountered order) in `crates/communal-algo/src/leiden/local_moving.rs`
+- [ ] T017 [US2] Verify seeded RNG integration in local moving and refinement phases produces deterministic output (cross-check T012/T013 implementation)
+- [ ] T018 [US2] Ensure community ID assignment is deterministic (contiguous by first-node-encountered order) in `crates/communal-algo/src/leiden/local_moving.rs`
 
 ### Tests for User Story 2
 
-[X] T019 [P] [US2] Add property-based determinism test in `crates/communal-algo/tests/leiden_determinism.rs` (same seed → identical membership, 100 runs)
+- [ ] T019 [P] [US2] Add property-based determinism test in `crates/communal-algo/tests/leiden_determinism.rs` (same seed → identical membership, 100 runs)
 
 **Checkpoint**: Determinism verified — same seed always produces identical results
 
@@ -95,15 +95,15 @@
 
 ### Implementation for User Story 3
 
-[X] T020 [US3] Implement empty graph handling in `crates/communal-algo/src/leiden/mod.rs` (return empty partition, no panic)
-[X] T021 [US3] Implement self-loop handling in quality functions in `crates/communal-algo/src/quality.rs` (counted once per research.md §3)
-[X] T022 [US3] Verify (no implementation needed): disconnected components produce naturally isolated communities — algorithm inherently separates via absent edges; add integration test confirming communities never span disconnected components
-[X] T023 [US3] Implement negative weight validation in `crates/communal-algo/src/leiden/mod.rs` (reject only when total weight m ≤ 0, per FR-010)
-[X] T024 [US3] Implement max_iterations handling in `crates/communal-algo/src/leiden/convergence.rs` (return best partition with `AlgorithmError::NonConvergence { iterations }` and tracing warning — never panic)
+- [ ] T020 [US3] Implement empty graph handling in `crates/communal-algo/src/leiden/mod.rs` (return empty partition, no panic)
+- [ ] T021 [US3] Implement self-loop handling in quality functions in `crates/communal-algo/src/quality.rs` (counted once per research.md §3)
+- [ ] T022 [US3] Verify (no implementation needed): disconnected components produce naturally isolated communities — algorithm inherently separates via absent edges; add integration test confirming communities never span disconnected components
+- [ ] T023 [US3] Implement negative weight validation in `crates/communal-algo/src/leiden/mod.rs` (reject only when total weight m ≤ 0, per FR-010)
+- [ ] T024 [US3] Implement max_iterations handling in `crates/communal-algo/src/leiden/convergence.rs` (return best partition with `AlgorithmError::NonConvergence { iterations }` and tracing warning — never panic)
 
 ### Tests for User Story 3
 
-[X] T025 [P] [US3] Add edge case tests in `crates/communal-algo/tests/leiden_edge_cases.rs` (empty graph, single node, self-loops, zero weights, disconnected components, negative weights valid/invalid; verify all returned quality scores are finite — no NaN/Inf — per SC-006)
+- [ ] T025 [P] [US3] Add edge case tests in `crates/communal-algo/tests/leiden_edge_cases.rs` (empty graph, single node, self-loops, zero weights, disconnected components, negative weights valid/invalid; verify all returned quality scores are finite — no NaN/Inf — per SC-006)
 
 **Checkpoint**: All edge cases handled without panics, valid partitions returned
 
@@ -113,15 +113,15 @@
 
 **Purpose**: Testing, validation, and quality assurance
 
-[X] T026 [P] Add property-based connected communities test in `crates/communal-algo/tests/leiden_connected.rs` (verify all communities internally connected via BFS)
-[X] T027 [P] Add quality monotonicity test in `crates/communal-algo/tests/leiden_connected.rs` (quality never decreases between iterations)
-[X] T028 [P] Add LFR benchmark validation test in `crates/communal-algo/tests/synthetic_ground_truth.rs` (NMI ≥ 0.95, marked #[ignore])
-[X] T029 Execute quickstart.md validation scenarios; resolve any failures found
-[X] T030 Run `cargo clippy --all-targets --all-features`; fix all warnings
-[X] T031 Run `cargo fmt --check`; fix any formatting issues
-[X] T032 Run `cargo doc --no-deps`; fix any documentation errors
-[X] T033 Verify `#![deny(unsafe_code, missing_docs, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::todo, clippy::unimplemented, clippy::allow_attributes_without_reason)]` passes
-[X] T034 [P] Document all public APIs in `crates/communal-algo/src/leiden/` and `crates/communal-algo/src/quality.rs` with formulas, complexity analysis, and executable doctests per constitution Principle IV
+- [ ] T026 [P] Add property-based connected communities test in `crates/communal-algo/tests/leiden_connected.rs` (verify all communities internally connected via BFS)
+- [ ] T027 [P] Add quality monotonicity test in `crates/communal-algo/tests/leiden_connected.rs` (quality never decreases between iterations)
+- [ ] T028 [P] Add LFR benchmark validation test in `crates/communal-algo/tests/synthetic_ground_truth.rs` (NMI ≥ 0.95, marked #[ignore])
+- [ ] T029 Execute quickstart.md validation scenarios; resolve any failures found
+- [ ] T030 Run `cargo clippy --all-targets --all-features`; fix all warnings
+- [ ] T031 Run `cargo fmt --check`; fix any formatting issues
+- [ ] T032 Run `cargo doc --no-deps`; fix any documentation errors
+- [ ] T033 Verify `#![deny(unsafe_code, missing_docs, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::todo, clippy::unimplemented, clippy::allow_attributes_without_reason)]` passes
+- [ ] T034 [P] Document all public APIs in `crates/communal-algo/src/leiden/` and `crates/communal-algo/src/quality.rs` with formulas, complexity analysis, and executable doctests per constitution Principle IV
 
 ---
 
@@ -224,32 +224,27 @@ With multiple developers:
 
 ## Phase 7: Convergence
 
-**Purpose**: Remediation tasks appended by `$speckit-converge` to close gaps between spec/plan/tasks and current codebase state.
+**Purpose**: Close the gap between spec/plan/tasks and the current implementation. All algorithmic logic is stubbed out — this phase delivers working code.
 
-**Findings Summary**:
-- Requirements checked: 10 (FR-001 through FR-010)
-- Success criteria checked: 6 (SC-001 through SC-006)
-- Plan decisions checked: 8
-- Constitution principles checked: 7
-- Findings by gap type: 12 missing, 4 partial, 0 contradicts, 0 unrequested
-- Findings by severity: 3 CRITICAL, 5 HIGH, 1 MEDIUM
+**⚠️ CRITICAL**: No user story work can begin until foundational quality functions and algorithm phases are complete
 
-### Convergence Tasks
+- [x] T035 Create `crates/communal-algo/src/leiden/local_moving.rs` and implement the local moving phase (seeded RNG random node order, ΔQ computation via quality::delta_q(), positive gain moves, connectedness preservation) per FR-001 (missing)
+- [x] T036 Create `crates/communal-algo/src/leiden/refinement.rs` and implement randomized refinement (singleton start, exp(β·Δ) weighted selection, subpartition guarantee ∀C'∈P' ∃C∈P:C'⊆C, γ-connectivity) per FR-002 (missing)
+- [x] T037 Create `crates/communal-algo/src/leiden/aggregation.rs` and implement graph aggregation (community-to-nodes mapping, inter-community edge weight sums, self-loop creation summing intra-community edges) per FR-003 (missing)
+- [x] T038 Implement `Modularity::evaluate()` and `Cpm::evaluate()` in `crates/communal-algo/src/quality.rs` per research.md (undirected Newman-Girvan with resolution, standard CPM formulation) per FR-008 (missing)
+- [x] T039 Implement `Modularity::delta_q()` and `Cpm::delta_q()` in `crates/communal-algo/src/quality.rs` for local moving gain computation per FR-001 formulas (missing)
+- [x] T040 Implement `LeidenConfig::validate()` in `crates/communal-algo/src/leiden/config.rs` (gamma > 0 rejecting NaN/±Inf, beta ∈ [0.0005, 0.1], threshold > 0; returns `AlgorithmError::InvalidConfiguration { reason }`) per FR-007 (missing)
+- [x] T041 Implement graph validation in `crates/communal-algo/src/leiden/mod.rs` detect() (check total weight m > 0 → `GraphError::InvalidGraph { reason }`, empty graph → `GraphError::EmptyGraph`) per FR-010 (missing)
+- [x] T042 Implement `SteppingCallback` trait in `crates/communal-algo/src/leiden/mod.rs` (forward-only stepping: pause before each iteration, returns continue/abort, Send bound) per FR-009 (missing)
+- [x] T043 Integrate connectedness preservation into local moving and refinement phases (node eligibility checks ensure every community remains connected verifiable via BFS/DFS) per FR-006 (missing)
+- [x] T044 Implement max_iterations handling in convergence logic (return best partition with `AlgorithmError::NonConvergence { iterations }` and tracing warning — never panic) per FR-004 (missing)
+- [x] T045 Implement tracing event emission across all leiden files (LocalMovingStart/End, NodeRelocation, RefinementSplit, AggregationContraction, ConvergencePlateau, ConvergenceDetected) per FR-009 (missing)
+- [x] T046 Wire seeded RNG into local moving and refinement node ordering (same seed → identical traversal order → bit-for-bit identical membership) per FR-005 (missing)
+- [x] T047 Implement edge case handling: self-loops counted once as intra-community weight, zero weights produce finite quality, negative weights validated at graph level (m > 0), disconnected components processed independently per FR-010 (missing)
+- [x] T048 Extract convergence logic from mod.rs into `crates/communal-algo/src/leiden/convergence.rs` with plateau event emission (iteration, improvement, current_quality fields) per FR-004, FR-009 (partial)
+- [x] T049 Create `crates/communal-algo/tests/leiden_connected.rs` with property-based test verifying all communities internally connected via BFS traversal per SC-001 (missing)
+- [x] T050 Create `crates/communal-algo/tests/leiden_determinism.rs` with property-based test (same seed → identical membership across 100 runs) per SC-002 (missing)
+- [x] T051 Create `crates/communal-algo/tests/leiden_edge_cases.rs` (empty graph, single node, self-loops, zero weights, disconnected components, negative weights; verify finite quality per SC-006) per SC-004 (missing)
+- [x] T052 Create `crates/communal-algo/tests/synthetic_ground_truth.rs` with LFR benchmark validation (NMI ≥ 0.95, marked #[ignore]) per SC-003 (missing)
 
-[X] T035 Implement quality function evaluations in `crates/communal-algo/src/quality.rs`: `Modularity::evaluate()` and `Cpm::evaluate()` per spec FR-008 and research.md §1-2 (missing)
-[X] T036 Implement quality gain methods in `crates/communal-algo/src/quality.rs`: `Modularity::delta_q()` and `Cpm::delta_q()` per spec FR-001 formulas (missing)
-[X] T037 Implement local moving phase in `crates/communal-algo/src/leiden/local_moving.rs`: seeded RNG, ΔQ computation, positive gain moves per spec FR-001 (missing)
-[X] T038 Implement refinement phase in `crates/communal-algo/src/leiden/refinement.rs`: singleton start, exp(β·Δ) weighted selection, subpartition guarantee per spec FR-002 (missing)
-[X] T039 Implement aggregation phase in `crates/communal-algo/src/leiden/aggregation.rs`: community-to-nodes mapping, inter-community edge sums, self-loop creation per spec FR-003 (missing)
-[X] T040 Create `crates/communal-algo/src/leiden/convergence.rs` as standalone module (extract from inline mod in mod.rs) per plan §Source Code (missing)
-[X] T041 Implement `LeidenConfig::validate()` in `crates/communal-algo/src/leiden/config.rs`: gamma > 0 with NaN/±Inf rejection, beta ∈ [0.0005, 0.1], threshold > 0 per spec FR-007 (missing)
-[X] T042 Implement graph validation in `crates/communal-algo/src/leiden/mod.rs`: total weight m > 0 check returning `GraphError::InvalidGraph` when m ≤ 0 per spec FR-010 (missing)
-[X] T043 Implement `SteppingCallback` trait in `crates/communal-algo/src/leiden/mod.rs`: forward-only stepping, Send bound per spec FR-009 and research.md §8 (missing)
-[X] T044 Wire tracing event emission in `crates/communal-algo/src/leiden/` phase files: LocalMovingStart/End, NodeRelocation, RefinementSplit, AggregationContraction, ConvergencePlateau, ConvergenceDetected per spec FR-009 and tasks.md T016 (missing)
-[X] T045 Add property-based connected communities test in `crates/communal-algo/tests/leiden_connected.rs`: verify all communities internally connected via BFS per spec SC-001 (missing)
-[X] T046 Add property-based determinism test in `crates/communal-algo/tests/leiden_determinism.rs`: same seed → identical membership, 100 runs per spec SC-002 (missing)
-[X] T047 Add edge case tests in `crates/communal-algo/tests/leiden_edge_cases.rs`: empty graph, single node, self-loops, zero weights, disconnected components, negative weights per spec SC-004 and SC-006 (missing)
-[X] T048 Add LFR benchmark validation test in `crates/communal-algo/tests/synthetic_ground_truth.rs`: NMI ≥ 0.95 per spec SC-003 (missing)
-[X] T049 Fix empty graph handling in `crates/communal-algo/src/leiden/mod.rs`: return `GraphError::EmptyGraph` per spec FR-010 and contracts/leiden-api.md BC-003 (partial)
-
-**Checkpoint**: All convergence tasks complete — implementation satisfies spec, plan, and original tasks
+**Checkpoint**: Convergence complete — all spec requirements have corresponding implementations
