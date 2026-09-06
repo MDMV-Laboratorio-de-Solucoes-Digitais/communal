@@ -10,25 +10,56 @@ pub mod convergence;
 pub mod local_moving;
 pub mod refinement;
 
+// Re-export LeidenConfig for external use (e.g., WASM crate).
+pub use config::LeidenConfig;
+
 use communal_core::detector::CommunityDetector;
 use communal_core::error::GraphError;
 use communal_core::graph_view::GraphView;
 use communal_core::id::NodeId;
 use communal_core::partition::Partition;
 use communal_core::quality::QualityMetric;
-use communal_core::step::StepEvent;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
-use tracing::warn;
+use rand::rngs::StdRng;
+use tracing::{info, warn};
 
-// Aggregation phase: used in multi-level graph folding.
-#[expect(unused_imports, reason = "aggregation is used in multi-level graph folding but currently only via re-export")]
 use crate::leiden::aggregation::aggregation;
-use crate::leiden::config::LeidenConfig;
-use crate::leiden::convergence::ConvergenceState;
+use crate::leiden::convergence::{has_converged, plateau_threshold};
 use crate::leiden::local_moving::local_moving;
-use crate::leiden::refinement::refinement;
 use crate::quality::{Cpm, Modularity, QualityFunction};
+
+/// Callback trait for forward-only algorithm stepping control.
+///
+/// Implementors can pause execution before each iteration and decide
+/// whether to continue or abort. When `None`, the algorithm runs
+/// unhindered at full speed (zero-cost when disabled).
+///
+/// The trait is `Send` (not `Send + Sync`) to allow mutable state
+/// in callbacks during single-threaded dispatch.
+pub trait SteppingCallback: Send {
+    /// Called before each iteration.
+    ///
+    /// # Arguments
+    ///
+    /// * `iteration` — Current iteration number (0-indexed).
+    /// * `phase` — Current algorithm phase.
+    ///
+    /// # Returns
+    ///
+    /// `true` to continue execution, `false` to abort.
+    fn before_iteration(&mut self, iteration: usize, phase: AlgorithmPhase) -> bool;
+}
+
+/// Algorithm phases for stepping control.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AlgorithmPhase {
+    /// Smart local moving phase.
+    LocalMoving,
+    /// Randomized refinement phase.
+    Refinement,
+    /// Graph aggregation phase.
+    Aggregation,
+}
 
 /// Leiden algorithm implementation.
 ///
@@ -59,120 +90,148 @@ impl Leiden {
 
     /// Computes the total edge weight of the graph.
     ///
-    /// Sums all edge weights and divides by two since each edge is counted
-    /// once from each endpoint.
+    /// Each undirected edge is counted exactly once: for an edge between nodes
+    /// `i` and `j` (by `NodeId` index), it is included when `j >= i`. Self-loops
+    /// are counted once.
     fn compute_total_weight<G: GraphView>(graph: &G) -> f64 {
-        let mut total = 0.0;
-        for node_idx in 0..graph.node_count() {
-            // NodeId wraps NonZeroU32, so we offset by 1 to avoid index 0
-            let raw_id = u32::try_from(node_idx).unwrap_or(u32::MAX).wrapping_add(1);
-            let Some(node) = NodeId::new(raw_id) else {
+        let mut total = 0.0_f64;
+        // Valid node indices are 1..=node_count (NodeId(0) is the niche value).
+        for i in 1..=graph.node_count() {
+            let Some(node) = u32::try_from(i).ok().and_then(NodeId::new) else {
                 continue;
             };
             for neighbor in graph.neighbors(node) {
-                if let Some(weight) = graph.edge_weight(node, neighbor) {
-                    total += weight;
+                if neighbor.index() >= i
+                    && let Some(w) = graph.edge_weight(node, neighbor)
+                {
+                    total += w;
                 }
             }
         }
-        total / 2.0
+        total
     }
 
-    /// Computes the quality of the current partition.
-    fn compute_quality<G: GraphView>(&self, graph: &G, membership: &[u32]) -> f64 {
-        let partition = Partition::new(membership.to_vec(), 0.0);
+    /// Computes the quality score for the given membership assignment.
+    ///
+    /// Creates a 1-indexed partition from the 0-indexed membership vector
+    /// and evaluates it using the configured quality function.
+    fn compute_quality<G: GraphView>(&self, graph: &G, membership: &[u32]) -> Result<f64, GraphError> {
+        let mut one_indexed = vec![0_u32; 1];
+        one_indexed.extend_from_slice(membership);
+        let partition = Partition::new(one_indexed, 0.0);
+
         match self.quality_function {
-            QualityFunction::Modularity => Modularity::new(self.config.gamma)
-                .evaluate(graph, &partition)
-                .unwrap_or(0.0),
-            QualityFunction::Cpm => Cpm::new(self.config.gamma)
-                .evaluate(graph, &partition)
-                .unwrap_or(0.0),
-            QualityFunction::MapEquation => 0.0,
+            QualityFunction::Modularity => {
+                let m = Modularity::new(self.config.gamma);
+                m.evaluate(graph, &partition).map_err(|e| GraphError::InvalidGraph {
+                    reason: format!("quality computation failed: {e}"),
+                })
+            }
+            QualityFunction::Cpm => {
+                let cpm = Cpm::new(self.config.gamma);
+                cpm.evaluate(graph, &partition).map_err(|e| GraphError::InvalidGraph {
+                    reason: format!("quality computation failed: {e}"),
+                })
+            }
+            QualityFunction::MapEquation => Ok(0.0),
         }
     }
 }
 
 impl<G: GraphView> CommunityDetector<G> for Leiden {
     fn detect(&self, graph: &G) -> Result<Partition, GraphError> {
+        // Validate configuration parameters.
         self.config.validate().map_err(|e| GraphError::InvalidGraph {
             reason: e.to_string(),
         })?;
 
+        // Handle empty graph (0 nodes).
         if graph.node_count() == 0 {
-            return Err(GraphError::EmptyGraph);
+            return Ok(Partition::new(Vec::new(), 0.0));
         }
 
+        // Handle graph with no edges: each node in its own community.
         let total_weight = Self::compute_total_weight(graph);
         if total_weight <= 0.0 {
-            return Err(GraphError::InvalidGraph {
-                reason: format!("total edge weight must be positive, got {total_weight}"),
-            });
+            let membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
+            return Ok(Partition::new(membership, 0.0));
         }
 
-        self.config.validate().map_err(|e| GraphError::InvalidGraph {
-            reason: e.to_string(),
-        })?;
+        // Initialize membership: each node in its own community (singletons).
+        // Valid node indices are 1..=node_count (NodeId(0) is the niche value),
+        // so the membership vector has node_count entries.
+        let node_count = graph.node_count();
+        let max_id = u32::try_from(node_count).unwrap_or(u32::MAX);
+        let mut membership: Vec<u32> = (0..max_id).collect();
 
         let mut rng = StdRng::seed_from_u64(self.config.seed.unwrap_or(42));
-        let mut membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX))
-            .collect();
-
-        let mut convergence_state = ConvergenceState::new();
+        let mut previous_quality = 0.0_f64;
+        let mut best_membership = membership.clone();
+        let mut best_quality = 0.0_f64;
+        let mut converged = false;
 
         for iteration in 0..self.config.max_iterations {
-            let improved = local_moving(
-                graph,
-                &mut membership,
-                self.quality_function,
-                self.config.gamma,
-                &mut rng,
-            );
+            // Local moving phase.
+            info!(iteration, phase = "local_moving", "local moving phase started");
+            let improved = local_moving(graph, &mut membership, self.quality_function, self.config.gamma, &mut rng);
 
-            if !improved && iteration > 0 {
+            // Compute current quality.
+            let current_quality = self.compute_quality(graph, &membership)?;
+            let improvement = (current_quality - previous_quality).abs();
+
+            // Check convergence.
+            if has_converged(
+                current_quality,
+                previous_quality,
+                self.config.convergence_threshold,
+                self.config.convergence_mode,
+            ) {
+                info!(iteration, final_quality = current_quality, "convergence detected");
+                best_membership.clone_from(&membership);
+                best_quality = current_quality;
+                converged = true;
                 break;
             }
 
-            refinement(
-                graph,
-                &mut membership,
-                self.quality_function,
-                self.config.gamma,
-                self.config.beta,
-                &mut rng,
-            );
-
-            let quality = self.compute_quality(graph, &membership);
-            let events = convergence_state.update(
-                quality,
-                self.config.convergence_threshold,
-                self.config.convergence_mode,
-            );
-
-            for event in &events {
-                match event {
-                    StepEvent::ConvergenceDetected { .. } => {
-                        let final_membership = membership.clone();
-                        return Ok(Partition::new(final_membership, quality));
-                    }
-                    StepEvent::ConvergencePlateau {
-                        iterations_below_threshold,
-                    } => {
-                        warn!(
-                            iterations_below_threshold = *iterations_below_threshold,
-                            "Convergence plateau detected"
-                        );
-                    }
-                    _ => {}
-                }
+            // Plateau detection (does not terminate the algorithm).
+            let plateau = plateau_threshold(self.config.convergence_threshold);
+            if improvement < plateau {
+                info!(iteration, improvement, current_quality, "convergence plateau detected");
             }
 
-            if convergence_state.has_converged() {
+            // Aggregation for tracing.
+            let aggregation_result = aggregation(graph, &membership);
+            let num_communities = aggregation_result.community_to_nodes.len();
+            info!(
+                iteration,
+                phase = "aggregation",
+                from = node_count,
+                to = num_communities,
+                "aggregation contraction"
+            );
+
+            // Track best partition.
+            if current_quality > best_quality {
+                best_quality = current_quality;
+                best_membership.clone_from(&membership);
+            }
+
+            previous_quality = current_quality;
+
+            // If local moving didn't improve, we're done.
+            if !improved {
                 break;
             }
         }
 
-        let final_quality = self.compute_quality(graph, &membership);
-        Ok(Partition::new(membership, final_quality))
+        // Handle max iterations without convergence.
+        if !converged {
+            warn!(
+                iterations = ?self.config.max_iterations,
+                "algorithm reached max iterations without converging"
+            );
+        }
+
+        Ok(Partition::new(best_membership, best_quality))
     }
 }
