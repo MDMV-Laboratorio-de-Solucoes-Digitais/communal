@@ -1,6 +1,7 @@
 //! Configuration for the Leiden algorithm.
 
 use communal_core::config::{AlgorithmConfig, ConvergenceMode};
+use communal_core::error::AlgorithmError;
 
 /// Configuration for the Leiden algorithm.
 ///
@@ -32,6 +33,39 @@ impl Default for LeidenConfig {
             max_iterations: 1000,
             seed: None,
         }
+    }
+}
+
+impl LeidenConfig {
+    /// Validates the configuration parameters.
+    ///
+    /// Ensures that `gamma` is positive and finite, `beta` is within the
+    /// acceptable range, and `convergence_threshold` is positive.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AlgorithmError::InvalidConfiguration`] if any parameter
+    /// violates its constraint.
+    pub fn validate(&self) -> Result<(), AlgorithmError> {
+        if !self.gamma.is_finite() || self.gamma <= 0.0 {
+            return Err(AlgorithmError::InvalidConfiguration {
+                reason: format!("gamma must be > 0 and finite, got {}", self.gamma),
+            });
+        }
+        if self.beta < 0.0005 || self.beta > 0.1 {
+            return Err(AlgorithmError::InvalidConfiguration {
+                reason: format!("beta must be in [0.0005, 0.1], got {}", self.beta),
+            });
+        }
+        if self.convergence_threshold <= 0.0 {
+            return Err(AlgorithmError::InvalidConfiguration {
+                reason: format!(
+                    "convergence_threshold must be > 0, got {}",
+                    self.convergence_threshold
+                ),
+            });
+        }
+        Ok(())
     }
 }
 
