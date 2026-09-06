@@ -145,17 +145,16 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
             reason: e.to_string(),
         })?;
 
-        // Handle empty graph.
+        // Handle empty graph (0 nodes).
         if graph.node_count() == 0 {
             return Ok(Partition::new(Vec::new(), 0.0));
         }
 
-        // Check total edge weight is positive.
+        // Handle graph with no edges: each node in its own community.
         let total_weight = Self::compute_total_weight(graph);
         if total_weight <= 0.0 {
-            return Err(GraphError::InvalidGraph {
-                reason: "total edge weight must be positive".into(),
-            });
+            let membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
+            return Ok(Partition::new(membership, 0.0));
         }
 
         // Initialize membership: each node in its own community (singletons).
