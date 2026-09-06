@@ -94,7 +94,10 @@ fn collect_neighbor_communities<G: GraphView>(
         std::collections::HashMap::new();
 
     for neighbor in graph.neighbors(node) {
-        let neighbor_idx = neighbor.index() - 1;
+        let neighbor_idx = neighbor.index().saturating_sub(1);
+        if neighbor_idx >= membership.len() {
+            continue;
+        }
         let neighbor_community = membership[neighbor_idx];
         let weight = graph.edge_weight(node, neighbor).unwrap_or(0.0);
         *community_weights.entry(neighbor_community).or_insert(0.0) += weight;
