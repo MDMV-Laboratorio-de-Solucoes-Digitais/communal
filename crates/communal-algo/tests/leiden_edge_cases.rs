@@ -8,7 +8,6 @@ use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
-use communal_core::error::GraphError;
 use communal_core::id::NodeId;
 
 // ---------------------------------------------------------------------------
