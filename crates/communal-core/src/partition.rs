@@ -48,11 +48,13 @@ impl Partition {
 
     /// Returns the number of distinct communities.
     ///
-    /// Computed as `max(membership) + 1`, assuming contiguous community IDs.
+    /// Counts unique community IDs in the membership vector.
     #[must_use]
     pub fn community_count(&self) -> usize {
-        let max = self.membership.iter().copied().max().unwrap_or(0);
-        (max + 1) as usize
+        let mut unique: Vec<u32> = self.membership.iter().copied().collect();
+        unique.sort_unstable();
+        unique.dedup();
+        unique.len()
     }
 
     /// Checks if any community is internally disconnected.
