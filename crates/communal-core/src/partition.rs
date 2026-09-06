@@ -26,9 +26,12 @@ impl Partition {
     }
 
     /// Returns the community assignment for a node, if it exists.
+    ///
+    /// `NodeId` is 1-based while the internal membership vector is 0-based,
+    /// so we subtract 1 to convert.
     #[must_use]
     pub fn community_of(&self, node: NodeId) -> Option<&u32> {
-        self.membership.get(node.index())
+        self.membership.get(node.index().wrapping_sub(1))
     }
 
     /// Returns the quality score of this partition.
