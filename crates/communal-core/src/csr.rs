@@ -48,14 +48,16 @@ impl CsrGraph {
         let mut cursor = row_ptr.clone();
 
         for (from, to, weight) in edges {
+            // NodeId is 1-based (NonZeroU32), so we store neighbor indices
+            // as 1-based values to match what `NodeId::new` expects.
             let pos = cursor[*from as usize] as usize;
-            col_idx[pos] = *to;
+            col_idx[pos] = *to + 1;
             weights[pos] = *weight;
             cursor[*from as usize] += 1;
 
             if *from != *to {
                 let pos = cursor[*to as usize] as usize;
-                col_idx[pos] = *from;
+                col_idx[pos] = *from + 1;
                 weights[pos] = *weight;
                 cursor[*to as usize] += 1;
             }
@@ -79,7 +81,8 @@ impl GraphView for CsrGraph {
     }
 
     fn neighbors(&self, node: NodeId) -> impl Iterator<Item = NodeId> {
-        let idx = node.index();
+        // NodeId is 1-based; convert to 0-based for row_ptr indexing.
+        let idx = node.index().saturating_sub(1);
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
         self.col_idx[start..end]
@@ -89,7 +92,8 @@ impl GraphView for CsrGraph {
     }
 
     fn edge_weight(&self, from: NodeId, to: NodeId) -> Option<f64> {
-        let idx = from.index();
+        // NodeId is 1-based; convert to 0-based for row_ptr indexing.
+        let idx = from.index().saturating_sub(1);
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
         for i in start..end {
