@@ -174,7 +174,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         for iteration in 0..self.config.max_iterations {
             // Local moving phase.
             info!(iteration, phase = "local_moving", "local moving phase started");
-            let improved = local_moving(graph, &mut membership, &self.config, self.quality_function, &mut rng);
+            let improved = local_moving(graph, &mut membership, self.quality_function, self.config.gamma, &mut rng);
 
             // Compute current quality.
             let current_quality = self.compute_quality(graph, &membership)?;
@@ -201,7 +201,8 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
             }
 
             // Aggregation for tracing.
-            let (_community_to_nodes, _reduced_edges, num_communities) = aggregation(graph, &membership);
+            let aggregation_result = aggregation(graph, &membership);
+            let num_communities = aggregation_result.community_to_nodes.len();
             info!(
                 iteration,
                 phase = "aggregation",
