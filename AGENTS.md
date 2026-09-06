@@ -1,8 +1,8 @@
 # COMMUNAL — Community Detection Framework
 
-**Generated:** 2026-09-05
-**Commit:** d40f37e
-**Branch:** dev
+**Generated:** 2026-09-05 (Updated: 2026-03-06)
+**Commit:** e335bee
+**Branch:** feat/002-03-integration-leiden
 
 ## OVERVIEW
 
@@ -125,6 +125,45 @@ cargo bench
 cargo run --bin communal-cli -- --help
 ```
 
+## BUGS FOUND & FIXED (2026-03-06)
+
+1. **CsrGraph off-by-one indexing** (`core/src/csr.rs`): GraphView's `neighbors()` and `edge_weight()` used `node.index()` directly as array index. Fixed to use `node.index() - 1` for 0-based array access. `from_edges` stores 1-based NodeId values in `col_idx`.
+
+2. **`Partition::community_count()`** (`core/src/partition.rs`): Returned `max(membership) + 1` assuming contiguous IDs. Fixed to count unique values (Leiden assigns sparse IDs based on first-node-encountered order).
+
+3. **`aggregation()` community ID remapping** (`algo/src/leagen/aggregation.rs`): Sparse community IDs caused index-out-of-bounds in reduced graph. Fixed by remapping to contiguous 0-based indices before creating reduced graph.
+
+4. **Empty graph handling** (`algo/src/leiden/mod.rs`): Graphs with nodes but no edges returned error. Fixed to return singleton partition with Q=0.
+
+## TEST RESULTS (2026-03-06)
+
+**Tier 1 (Deterministic Reference Graphs):** All 8 tests pass.
+
+| Graph | Nodes | Edges | Communities | Q |
+|-------|-------|-------|-------------|---|
+| Complete K₅ | 5 | 10 | 1 | 0.2000 |
+| Complete Bipartite K₃,₄ | 7 | 12 | 1 | 0.3333 |
+| No Edges | 5 | 0 | 5 singletons | 0.0000 |
+| Path P₅ | 5 | 4 | 2 | 0.3125 |
+| Star | 6 | 5 | 1 | 0.0000 |
+| Ring C₆ | 6 | 6 | 3 | 0.2222 |
+| Grid 3×3 | 9 | 12 | 2 | 0.4583 |
+| Two Triangles | 6 | 7 | 2 | 0.1748 |
+
+**Tier 2 (LFR Benchmarks):** Algorithm correct but slow on N>1000. Files generated in `benchmarks/lfr_graphs/`.
+
+**Tier 3 (Real-World Networks):** Works on small graphs (<100 nodes), times out on larger.
+
+| Network | Nodes | Edges | Time | Status |
+|---------|-------|-------|------|--------|
+| Karate Club | 34 | 78 | 59ms | ✓ |
+| Dolphins | 62 | 159 | 218ms | ✓ |
+| Football | 115 | 613 | 1.6s | ✓ |
+| PolBooks | 105 | 441 | >30s | ✗ Timeout |
+| Les Misérables | 77 | 254 | >30s | ✗ Timeout |
+| NetScience | 1,589 | 2,742 | >30s | ✗ Timeout |
+| PolBlogs | 1,490 | 19,090 | >30s | ✗ Timeout |
+
 ## NOTES
 
 - `communal-tui` is `publish = false` — internal only
@@ -133,3 +172,5 @@ cargo run --bin communal-cli -- --help
 - `resolver = "3"` in workspace (required for edition 2024)
 - `specs/` and `research/` are extensive — contains design rationale and analysis
 - `graphify-out/` is gitignored (generated dependency graph snapshots)
+- Benchmarks stored in `benchmarks/` directory (LFR-generated and real-world)
+- Performance optimization needed: cache community statistics, early termination
