@@ -85,6 +85,7 @@ impl GraphView for CsrGraph {
         let idx = node.index().saturating_sub(1);
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
+        // col_idx stores 1-based NodeId values (set by from_edges).
         self.col_idx[start..end]
             .iter()
             .copied()
@@ -96,6 +97,7 @@ impl GraphView for CsrGraph {
         let idx = from.index().saturating_sub(1);
         let start = self.row_ptr[idx] as usize;
         let end = self.row_ptr[idx + 1] as usize;
+        // col_idx stores 1-based NodeId values; compare directly with to.
         for i in start..end {
             if self.col_idx[i] == to.raw().get() {
                 return Some(self.weights[i]);
