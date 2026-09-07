@@ -1,6 +1,6 @@
 # communal-metrics — Evaluation Metrics
 
-**Generated:** 2026-09-05
+**Generated:** 2026-09-07
 
 ## OVERVIEW
 
@@ -32,3 +32,24 @@ src/
 All metrics implement traits from `communal-core`:
 - `QualityMetric` — single-partition evaluation (returns `f64`)
 - `ComparativeMetric` — two-partition comparison (e.g., NMI, ARI)
+
+## DEPENDENCIES
+
+- `communal-core` — Core traits (`QualityMetric`, `ComparativeMetric`)
+- `thiserror` — Error derive macro
+- `ndarray` — N-dimensional arrays for matrix operations
+- `num-traits` — Numeric traits
+- `rayon` — Data parallelism
+
+## FEATURES
+
+- `default = []` — No default features
+- `serde` — Serialization support for metric results
+
+## LINTS
+
+Strict lints inherited from workspace (`[lints] workspace = true`):
+- `#![deny(unsafe_code)]`
+- `#![deny(missing_docs)]`
+- `#![deny(missing_debug_implementations)]`
+- No `unwrap`/`expect`/`panic` allowed
