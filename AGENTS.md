@@ -1,6 +1,6 @@
 # COMMUNAL — Community Detection Framework
 
-**Generated:** 2026-09-05 (Updated: 2026-03-06)
+**Generated:** 2026-09-05 (Updated: 2026-09-07)
 **Commit:** e335bee
 **Branch:** feat/002-03-integration-leiden
 
