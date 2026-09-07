@@ -31,4 +31,5 @@ graphify-out/
 .specify/
 .agents/
 .prompts/
-.omo
+.omo/
+.dsh/
