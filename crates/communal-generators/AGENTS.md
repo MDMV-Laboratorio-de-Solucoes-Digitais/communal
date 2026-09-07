@@ -1,6 +1,6 @@
 # communal-generators — Synthetic Benchmark Graphs
 
-**Generated:** 2026-09-05
+**Generated:** 2026-09-07
 
 ## OVERVIEW
 
@@ -26,3 +26,17 @@ src/
 | Random graph | `erdos_renyi.rs` | Baseline comparison |
 | Overlapping communities | `lfr.rs` | Ground-truth with overlap |
 | Block structure | `sbm.rs` | Defined community structure |
+
+## DEPENDENCIES
+
+| Crate | Version | Notes |
+|-------|---------|-------|
+| `communal-core` | path | Core types (`CsrGraph`) |
+| `rand` | 0.9 | Random number generation |
+
+## NOTES
+
+- All generators currently return **empty graph placeholders** (`CsrGraph::from_edges(&[], 0)`) — implementation is pending.
+- Each generator follows the same pattern: `*Config` struct with `Default` impl + `*Generator` struct with `new()` and `generate()` methods.
+- All public items require docstrings (`#![deny(missing_docs)]`).
+- Strict lints inherited from workspace (`unsafe_code = "deny"`, no `unwrap`/`expect`/`panic`).
