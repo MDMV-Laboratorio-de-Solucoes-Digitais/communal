@@ -1,6 +1,6 @@
 # communal-dynamic — Incremental Graph Updates
 
-**Generated:** 2026-09-05
+**Generated:** 2026-09-07
 
 ## OVERVIEW
 
@@ -25,3 +25,24 @@ src/
 | Add new mutation type | `mutation.rs` | Edge change classification |
 | Implement streaming | `streaming.rs` | Trait for incremental detection |
 | Track hierarchy | `hierarchy.rs` | Multi-level community structure |
+
+## DEPENDENCIES
+
+- `communal-core` — Core traits, errors, graph types
+- `thiserror` — Error derivation
+- `hashbrown` — Fast HashMap for incremental state
+- `rayon` — Parallel iteration
+
+## FEATURES
+
+- `default = []` — No default features
+- `serde` — Serialization support
+
+## LINTS
+
+Strict lints inherited from workspace (`[lints] workspace = true`):
+- `#![deny(unsafe_code)]`
+- `#![deny(missing_docs)]`
+- `#![deny(missing_debug_implementations)]`
+- No `unwrap`/`expect`/`panic`
+
