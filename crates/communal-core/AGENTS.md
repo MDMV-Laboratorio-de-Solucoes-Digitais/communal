@@ -36,6 +36,26 @@ src/
 | Build a graph | `builder.rs` | `GraphBuilder::new().from_edges(...)` |
 | Understand algorithm stepping | `step.rs` | Events for observability/debugging |
 
+## DEPENDENCIES
+
+| Crate | Purpose |
+|-------|---------|
+| `num-traits` | Numeric trait abstractions |
+| `thiserror` | Derive-based error enum macros |
+| `serde` | Serialization/deserialization |
+
+No `petgraph` or `rayon` — this crate is fully self-contained with zero optional features.
+
+## STRICT LINTS
+
+Inherits workspace lints via `[lints] workspace = true`. Crate-level denies in `lib.rs`:
+
+- `unsafe_code = "deny"` — no unsafe blocks
+- `missing_docs = "deny"` — all public items must be documented
+- `unwrap_used = "deny"`, `expect_used = "deny"` — no panicking unwraps
+- `panic = "deny"`, `todo = "deny"`, `unimplemented = "deny"` — no panicking macros
+- `allow_attributes_without_reason = "deny"` — any `#[allow]` must have `reason = "..."`
+
 ## UNIQUE STYLES
 
 - **Sealed supertrait**: `MultilayerView` uses `private::Sealed` to prevent external implementations
