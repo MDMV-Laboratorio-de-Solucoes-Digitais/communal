@@ -21,6 +21,8 @@ pub struct LeidenConfig {
     pub max_iterations: usize,
     /// Random seed.
     pub seed: Option<u64>,
+    /// Periodic recomputation interval (default 100).
+    pub recompute_interval: u32,
 }
 
 impl LeidenConfig {
@@ -32,32 +34,49 @@ impl LeidenConfig {
     ///
     /// # Validation rules
     ///
-    /// - `gamma` must be > 0, not NaN, not ±Inf
-    /// - `beta` must be in [0.0005, 0.1]
-    /// - `convergence_threshold` must be > 0
+    /// - `gamma` must be >= 0, not NaN, not ±Inf
+    /// - `beta` must be in [0, 1]
+    /// - `convergence_threshold` must be >= 0
+    /// - `max_iterations` must be >= 1
+    /// - `recompute_interval` must be >= 1
     ///
     /// # Errors
     ///
     /// Returns `Err(AlgorithmError::InvalidConfiguration { reason })` describing
     /// the first invalid parameter encountered.
     pub fn validate(&self) -> Result<(), AlgorithmError> {
-        if !self.gamma.is_finite() || self.gamma <= 0.0 {
+        if !self.gamma.is_finite() || self.gamma < 0.0 {
             return Err(AlgorithmError::InvalidConfiguration {
-                reason: format!("gamma must be positive and finite, got {}", self.gamma),
+                reason: format!("gamma must be non-negative and finite, got {}", self.gamma),
             });
         }
 
-        if self.beta < 0.0005 || self.beta > 0.1 {
+        if !self.beta.is_finite() || self.beta < 0.0 || self.beta > 1.0 {
             return Err(AlgorithmError::InvalidConfiguration {
-                reason: format!("beta must be in [0.0005, 0.1], got {}", self.beta),
+                reason: format!("beta must be in [0, 1], got {}", self.beta),
             });
         }
 
-        if self.convergence_threshold <= 0.0 {
+        if !self.convergence_threshold.is_finite() || self.convergence_threshold < 0.0 {
             return Err(AlgorithmError::InvalidConfiguration {
                 reason: format!(
-                    "convergence_threshold must be positive, got {}",
+                    "convergence_threshold must be non-negative, got {}",
                     self.convergence_threshold
+                ),
+            });
+        }
+
+        if self.max_iterations < 1 {
+            return Err(AlgorithmError::InvalidConfiguration {
+                reason: format!("max_iterations must be >= 1, got {}", self.max_iterations),
+            });
+        }
+
+        if self.recompute_interval < 1 {
+            return Err(AlgorithmError::InvalidConfiguration {
+                reason: format!(
+                    "recompute_interval must be >= 1, got {}",
+                    self.recompute_interval
                 ),
             });
         }
@@ -106,6 +125,13 @@ impl LeidenConfig {
         self.seed = seed;
         self
     }
+
+    /// Sets the periodic recomputation interval.
+    #[must_use]
+    pub fn with_recompute_interval(mut self, interval: u32) -> Self {
+        self.recompute_interval = interval;
+        self
+    }
 }
 
 impl Default for LeidenConfig {
@@ -115,8 +141,9 @@ impl Default for LeidenConfig {
             beta: 0.01,
             convergence_threshold: 1e-6,
             convergence_mode: ConvergenceMode::Absolute,
-            max_iterations: 1000,
-            seed: None,
+            max_iterations: 10,
+            seed: Some(42),
+            recompute_interval: 100,
         }
     }
 }
