@@ -241,3 +241,115 @@ fn test_same_seed_same_result_100_iterations() -> Result<(), String> {
 
     Ok(())
 }
+
+/// Runs the Leiden algorithm with a given beta and seed, returning the membership vector.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_beta_and_seed(
+    graph: &CsrGraph,
+    beta: f64,
+    seed: u64,
+) -> Result<Vec<u32>, String> {
+    let config = LeidenConfig {
+        beta,
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.membership_vec().to_vec())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Runs the Leiden algorithm with a given beta and seed, returning the quality score.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_beta_and_seed_quality(
+    graph: &CsrGraph,
+    beta: f64,
+    seed: u64,
+) -> Result<f64, String> {
+    let config = LeidenConfig {
+        beta,
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Test that with `beta = 0` (greedy deterministic), the algorithm produces
+/// bitwise-identical results across multiple runs with the same seed.
+///
+/// When `beta = 0`, only positive quality gains are accepted and the max-gain
+/// candidate is always selected. Combined with a fixed seed, the refinement
+/// phase becomes fully deterministic, so both membership vectors and quality
+/// scores must be bitwise-identical across runs.
+#[test]
+fn test_beta_zero_greedy_deterministic() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+
+    let first_membership = run_leiden_with_beta_and_seed(&graph, 0.0, seed)?;
+    let first_quality = run_leiden_with_beta_and_seed_quality(&graph, 0.0, seed)?;
+    let first_quality_bits = first_quality.to_bits();
+
+    for i in 1..iterations {
+        let membership = run_leiden_with_beta_and_seed(&graph, 0.0, seed)?;
+        assert_eq!(
+            first_membership, membership,
+            "beta=0 membership vectors differ between run 0 and run {i} with seed {seed}"
+        );
+
+        let quality = run_leiden_with_beta_and_seed_quality(&graph, 0.0, seed)?;
+        assert_eq!(
+            quality.to_bits(),
+            first_quality_bits,
+            "beta=0 quality differs between run 0 and run {i} with seed {seed}: \
+             run0={first_quality:.17e}, run{i}={quality:.17e}"
+        );
+    }
+
+    Ok(())
+}
+
+/// Test that with `beta = 1` (uniform random), the algorithm produces valid
+/// partitions with finite quality scores.
+///
+/// When `beta = 1`, all neighboring communities are accepted as candidates and
+/// selection is uniformly random. Even with the same seed, results may differ
+/// across runs due to randomness in node ordering and candidate selection.
+/// This test verifies that all results are well-formed partitions and that
+/// quality scores are finite.
+#[test]
+fn test_beta_one_uniform_random() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+    let node_count = graph.node_count();
+
+    for i in 0..iterations {
+        let membership = run_leiden_with_beta_and_seed(&graph, 1.0, seed)
+            .map_err(|e| format!("beta=1 run {i} should succeed: {e}"))?;
+        assert!(
+            is_valid_partition(&membership, node_count),
+            "beta=1 run {i} produced invalid partition: {membership:?}",
+        );
+
+        let quality = run_leiden_with_beta_and_seed_quality(&graph, 1.0, seed)
+            .map_err(|e| format!("beta=1 run {i} quality should succeed: {e}"))?;
+        assert!(
+            quality.is_finite(),
+            "beta=1 run {i} produced non-finite quality: {quality}",
+        );
+    }
+
+    Ok(())
+}
