@@ -13,6 +13,8 @@
 //! error types, configuration traits, and algorithm interfaces — that all other
 //! crates in the workspace depend on.
 
+/// Graph builder with fluent construction API.
+pub mod builder;
 /// Algorithm configuration traits and convergence modes.
 pub mod config;
 /// Compressed Sparse Row graph representation.
@@ -25,17 +27,15 @@ pub mod error;
 pub mod graph_view;
 /// Node and community identifier newtypes.
 pub mod id;
+/// Graph input/output utilities.
+pub mod io;
 /// Partition data structure.
 pub mod partition;
 /// Quality and comparative metric traits.
 pub mod quality;
 /// Algorithm step events for observability.
 pub mod step;
-/// Graph builder with fluent construction API.
-pub mod builder;
-/// Graph traversal algorithms (BFS, DFS).
-pub mod traversal;
 /// Edge weight symmetrization utilities.
 pub mod symmetrize;
-/// Graph input/output utilities.
-pub mod io;
+/// Graph traversal algorithms (BFS, DFS).
+pub mod traversal;
