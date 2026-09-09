@@ -4,8 +4,8 @@
 //! when given the same seed, and that different seeds can produce
 //! different (but still valid) results.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::graph_view::GraphView;
@@ -137,7 +137,8 @@ fn test_different_seeds_may_differ() -> Result<(), String> {
 /// Test that the default seed (42) is used when no seed is specified.
 ///
 /// This verifies that running with `LeidenConfig::default()` (which has
-/// `seed: None`) produces the same result as running with `seed: Some(42)`.
+/// `seed: None`) produces the same result as running with `seed: Some(42)`,
+/// both in terms of membership vector and bitwise-identical quality score.
 #[test]
 fn test_default_seed() -> Result<(), String> {
     let graph = create_test_graph();
@@ -149,6 +150,70 @@ fn test_default_seed() -> Result<(), String> {
         default_result, explicit_result,
         "default config (seed=None) should produce the same result as seed=42"
     );
+
+    // Also verify bitwise-identical quality scores.
+    let default_quality = run_leiden_default_quality(&graph)?;
+    let explicit_quality = run_leiden_with_seed_quality(&graph, 42)?;
+    assert_eq!(
+        default_quality.to_bits(),
+        explicit_quality.to_bits(),
+        "default config (seed=None) should produce bitwise-identical Q as seed=42: \
+         default={default_quality:.17e}, explicit={explicit_quality:.17e}"
+    );
+
+    Ok(())
+}
+
+/// Runs the Leiden algorithm with a given seed and returns the quality score.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_seed_quality(graph: &CsrGraph, seed: u64) -> Result<f64, String> {
+    let config = LeidenConfig {
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Runs the Leiden algorithm with the default configuration and returns the quality score.
+fn run_leiden_default_quality(graph: &CsrGraph) -> Result<f64, String> {
+    let config = LeidenConfig::default();
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Test that running Leiden 10 times with the same seed produces bitwise-identical
+/// quality scores (all 17 significant digits of f64).
+///
+/// This goes beyond membership-vector equality and asserts that the raw `f64`
+/// quality value is identical down to the last bit, ensuring full determinism
+/// of the floating-point computation.
+#[test]
+fn test_same_seed_same_quality_bitwise() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+
+    let first_quality = run_leiden_with_seed_quality(&graph, seed)?;
+    let first_quality_bits = first_quality.to_bits();
+
+    for i in 1..iterations {
+        let quality = run_leiden_with_seed_quality(&graph, seed)?;
+        assert_eq!(
+            quality.to_bits(),
+            first_quality_bits,
+            "quality differs between run 0 and run {i} with seed {seed}: \
+             run0={first_quality:.17e}, run{i}={quality:.17e}"
+        );
+    }
 
     Ok(())
 }
