@@ -91,7 +91,10 @@ fn test_network(name: &str, edge_file: &str) {
             println!("  Membership: {membership:?}");
 
             // Verify quality is finite
-            assert!(partition.quality_score().is_finite(), "Quality must be finite");
+            assert!(
+                partition.quality_score().is_finite(),
+                "Quality must be finite"
+            );
             assert!(partition.quality_score() <= 1.0, "Quality must be <= 1");
 
             println!("  ✓ PASS: Valid partition, finite quality\n");
@@ -106,7 +109,7 @@ fn main() {
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  TIER 3 REAL-WORLD NETWORK BENCHMARKS                       ║");
     println!("╚══════════════════════════════════════════════════════════════╝\n");
-    
+
     test_network("Zachary Karate Club", "karate_club.edges");
     test_network("Dolphins Social Network", "dolphins.edges");
     test_network("American College Football", "football.edges");
@@ -114,7 +117,7 @@ fn main() {
     test_network("Les Misérables", "lesmis.edges");
     test_network("NetScience Co-authorship", "netscience.edges");
     test_network("Political Blogs (PolBlogs)", "polblogs.edges");
-    
+
     println!("══════════════════════════════════════════════════════════════");
     println!("Tier 3 real-world benchmark testing complete.");
     println!("══════════════════════════════════════════════════════════════");
