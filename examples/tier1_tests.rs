@@ -25,7 +25,10 @@ fn create_detector() -> Leiden {
 }
 
 /// Complete graph `K_n`: all nodes should be in one community
-#[expect(clippy::unwrap_used, reason = "Example test code uses unwrap for simplicity")]
+#[expect(
+    clippy::unwrap_used,
+    reason = "Example test code uses unwrap for simplicity"
+)]
 fn test_complete_graph() {
     println!("=== Complete Graph K_5 ===");
     let n = 5;
@@ -40,14 +43,21 @@ fn test_complete_graph() {
     let partition = detector.detect(&graph).unwrap();
 
     println!("  Nodes: {n}, Edges: {}", edges.len());
-    println!("  Communities: {} (expected: 1)", partition.community_count());
+    println!(
+        "  Communities: {} (expected: 1)",
+        partition.community_count()
+    );
     println!("  Quality Q: {:.4}", partition.quality_score());
     println!("  Membership: {:?}", partition.membership_vec());
 
     // Complete graph should have all nodes in one community
     let unique_communities: std::collections::HashSet<u32> =
         partition.membership_vec().iter().copied().collect();
-    assert_eq!(unique_communities.len(), 1, "Complete graph should have 1 community");
+    assert_eq!(
+        unique_communities.len(),
+        1,
+        "Complete graph should have 1 community"
+    );
     println!("  ✓ PASS: All nodes in single community\n");
 }
 
@@ -64,18 +74,25 @@ fn test_complete_bipartite() {
     let graph = CsrGraph::from_edges(&edges, (n + m) as usize);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: {}, Edges: {}", n + m, edges.len());
-    println!("  Communities: {} (expected: 1 - modularity can't detect bipartite structure)", partition.community_count());
+    println!(
+        "  Communities: {} (expected: 1 - modularity can't detect bipartite structure)",
+        partition.community_count()
+    );
     println!("  Quality Q: {:.4}", partition.quality_score());
     println!("  Membership: {:?}", partition.membership_vec());
-    
+
     // Note: Modularity optimization has a resolution limit that prevents
     // detecting bipartite structure. All nodes in one community is the
     // correct modularity-optimal partition for K_{n,m}.
-    let unique_communities: std::collections::HashSet<u32> = 
+    let unique_communities: std::collections::HashSet<u32> =
         partition.membership_vec().iter().copied().collect();
-    assert_eq!(unique_communities.len(), 1, "Modularity optimization merges bipartite into 1 community");
+    assert_eq!(
+        unique_communities.len(),
+        1,
+        "Modularity optimization merges bipartite into 1 community"
+    );
     println!("  ✓ PASS: Modularity-optimal partition found (resolution limit)\n");
 }
 
@@ -92,7 +109,10 @@ fn test_no_edges_graph() {
         "  Communities: {} (expected: {n} singletons)",
         partition.community_count()
     );
-    println!("  Quality Q: {:.4} (expected: 0.0)", partition.quality_score());
+    println!(
+        "  Quality Q: {:.4} (expected: 0.0)",
+        partition.quality_score()
+    );
     println!("  Membership: {:?}", partition.membership_vec());
 
     assert_eq!(
@@ -118,7 +138,7 @@ fn test_path_graph() {
     let graph = CsrGraph::from_edges(&edges, n as usize);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: {}, Edges: {}", n, edges.len());
     println!("  Communities: {}", partition.community_count());
     println!("  Quality Q: {:.4}", partition.quality_score());
@@ -137,7 +157,7 @@ fn test_star_graph() {
     let graph = CsrGraph::from_edges(&edges, n as usize);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: {}, Edges: {}", n, edges.len());
     println!("  Communities: {}", partition.community_count());
     println!("  Quality Q: {:.4}", partition.quality_score());
@@ -156,7 +176,7 @@ fn test_ring_graph() {
     let graph = CsrGraph::from_edges(&edges, n as usize);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: {}, Edges: {}", n, edges.len());
     println!("  Communities: {}", partition.community_count());
     println!("  Quality Q: {:.4}", partition.quality_score());
@@ -170,7 +190,7 @@ fn test_grid_graph() {
     let (rows, cols) = (3, 3);
     let n = rows * cols;
     let mut edges = Vec::new();
-    
+
     for r in 0..rows {
         for c in 0..cols {
             let node = r * cols + c;
@@ -187,7 +207,7 @@ fn test_grid_graph() {
     let graph = CsrGraph::from_edges(&edges, n as usize);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: {}, Edges: {}", n, edges.len());
     println!("  Communities: {}", partition.community_count());
     println!("  Quality Q: {:.4}", partition.quality_score());
@@ -199,30 +219,44 @@ fn test_grid_graph() {
 fn test_two_triangles() {
     println!("=== Two Triangles with Weak Bridge ===");
     let edges = vec![
-        (0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0),  // Triangle 1
-        (3, 4, 1.0), (3, 5, 1.0), (4, 5, 1.0),  // Triangle 2
-        (2, 3, 0.1),                              // Weak bridge
+        (0, 1, 1.0),
+        (0, 2, 1.0),
+        (1, 2, 1.0), // Triangle 1
+        (3, 4, 1.0),
+        (3, 5, 1.0),
+        (4, 5, 1.0), // Triangle 2
+        (2, 3, 0.1), // Weak bridge
     ];
     let graph = CsrGraph::from_edges(&edges, 6);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
+
     println!("  Nodes: 6, Edges: 7");
-    println!("  Communities: {} (expected: 2)", partition.community_count());
+    println!(
+        "  Communities: {} (expected: 2)",
+        partition.community_count()
+    );
     println!("  Quality Q: {:.4}", partition.quality_score());
     println!("  Membership: {:?}", partition.membership_vec());
-    
-    let unique_communities: std::collections::HashSet<u32> = 
+
+    let unique_communities: std::collections::HashSet<u32> =
         partition.membership_vec().iter().copied().collect();
-    assert_eq!(unique_communities.len(), 2, "Two triangles should have 2 communities");
-    
+    assert_eq!(
+        unique_communities.len(),
+        2,
+        "Two triangles should have 2 communities"
+    );
+
     // Verify triangles are in separate communities
     let membership = partition.membership_vec();
     assert_eq!(membership[0], membership[1], "Nodes 0,1 same community");
     assert_eq!(membership[1], membership[2], "Nodes 1,2 same community");
     assert_eq!(membership[3], membership[4], "Nodes 3,4 same community");
     assert_eq!(membership[4], membership[5], "Nodes 4,5 same community");
-    assert_ne!(membership[0], membership[3], "Triangles in different communities");
+    assert_ne!(
+        membership[0], membership[3],
+        "Triangles in different communities"
+    );
     println!("  ✓ PASS: Two communities, triangles separated\n");
 }
 
@@ -230,7 +264,7 @@ fn main() {
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  TIER 1 DETERMINISTIC REFERENCE GRAPHS - LEIDEN TESTING    ║");
     println!("╚══════════════════════════════════════════════════════════════╝\n");
-    
+
     test_complete_graph();
     test_complete_bipartite();
     test_no_edges_graph();
@@ -239,7 +273,7 @@ fn main() {
     test_ring_graph();
     test_grid_graph();
     test_two_triangles();
-    
+
     println!("══════════════════════════════════════════════════════════════");
     println!("All Tier 1 tests passed!");
     println!("══════════════════════════════════════════════════════════════");
