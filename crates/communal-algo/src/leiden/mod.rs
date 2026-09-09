@@ -115,6 +115,10 @@ impl Leiden {
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Main Leiden detect loop: local_moving → refinement → aggregation → convergence check"
+)]
 impl<G: GraphView> CommunityDetector<G> for Leiden {
     fn detect(&self, graph: &G) -> Result<Partition, GraphError> {
         // Validate configuration parameters.
@@ -236,6 +240,12 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
                 state.verify_consistency(graph, &membership),
                 "main loop: cache inconsistency detected"
             );
+        }
+
+        // Debug-build FP-drift fallback detector (FR-002, FR-011).
+        #[cfg(debug_assertions)]
+        {
+            state.check_and_repair(graph, &membership);
         }
 
         // Handle max iterations without convergence (FR-012).
