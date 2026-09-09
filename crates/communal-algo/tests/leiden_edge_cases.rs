@@ -50,19 +50,27 @@ fn community_of(partition: &communal_core::partition::Partition, node_idx: usize
 /// An empty graph (0 nodes) should return a valid empty partition
 /// rather than panicking or returning a garbage partition.
 #[test]
-fn test_empty_graph() {
+fn test_empty_graph() -> Result<(), String> {
     let detector = create_detector();
     let graph = CsrGraph::from_edges(&[], 0);
 
-    let partition = detector.detect(&graph).expect("empty graph should not error");
+    let partition = detector
+        .detect(&graph)
+        .map_err(|e| e.to_string())?;
     assert_eq!(partition.membership_vec().len(), 0);
-    assert_eq!(partition.quality_score(), 0.0);
+    assert!(
+        (partition.quality_score() - 0.0).abs() < f64::EPSILON,
+        "empty graph quality should be 0.0, got {}",
+        partition.quality_score()
+    );
+
+    Ok(())
 }
 
 /// A single node with a self-loop has positive total weight and should be
 /// assigned to exactly one community with a finite quality score.
 #[test]
-fn test_single_node() {
+fn test_single_node() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     // Self-loop gives the single node positive total weight so the algorithm
     // does not reject the graph as "non-positive total weight".
@@ -70,7 +78,7 @@ fn test_single_node() {
 
     let partition = detector
         .detect(&graph)
-        .expect("single-node graph with self-loop should be valid");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(
         partition.membership_vec().len(),
@@ -83,17 +91,19 @@ fn test_single_node() {
         "single node must form exactly one community"
     );
     assert_quality_finite(partition.quality_score(), "single node");
+
+    Ok(())
 }
 
 /// Two nodes connected by a single edge should end up in the same community.
 #[test]
-fn test_single_edge() {
+fn test_single_edge() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     let graph = CsrGraph::from_edges(&[(0, 1, 1.0)], 2);
 
     let partition = detector
         .detect(&graph)
-        .expect("two-node connected graph should be valid");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 2);
 
@@ -105,12 +115,14 @@ fn test_single_edge() {
         "nodes 0 and 1 are directly connected and should share a community"
     );
     assert_quality_finite(partition.quality_score(), "single edge");
+
+    Ok(())
 }
 
 /// A graph containing self-loops must not panic and should return a valid
 /// partition with finite quality.
 #[test]
-fn test_self_loops() {
+fn test_self_loops() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     let graph = CsrGraph::from_edges(
         &[
@@ -124,16 +136,18 @@ fn test_self_loops() {
 
     let partition = detector
         .detect(&graph)
-        .expect("graph with self-loops should be processed without panic");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 3);
     assert_quality_finite(partition.quality_score(), "self-loops");
+
+    Ok(())
 }
 
 /// A graph that contains zero-weight edges (mixed with positive edges so the
 /// total weight stays positive) should return a valid partition.
 #[test]
-fn test_zero_weights() {
+fn test_zero_weights() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     let graph = CsrGraph::from_edges(
         &[
@@ -146,17 +160,19 @@ fn test_zero_weights() {
 
     let partition = detector
         .detect(&graph)
-        .expect("graph with zero-weight edges should be valid");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 4);
     assert_quality_finite(partition.quality_score(), "zero weights");
+
+    Ok(())
 }
 
 /// Two disconnected components should each form their own independent
 /// community (or set of communities) — no cross-component merging can occur
 /// because there are no edges between them.
 #[test]
-fn test_disconnected_components() {
+fn test_disconnected_components() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     // Component A: triangle 0-1-2
     // Component B: single edge 3-4
@@ -173,7 +189,7 @@ fn test_disconnected_components() {
 
     let partition = detector
         .detect(&graph)
-        .expect("disconnected graph should be valid");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 5);
     assert_quality_finite(partition.quality_score(), "disconnected components");
@@ -189,12 +205,14 @@ fn test_disconnected_components() {
         communities_a.is_disjoint(&communities_b),
         "disconnected components must not share communities: A={communities_a:?}, B={communities_b:?}"
     );
+
+    Ok(())
 }
 
 /// Negative edge weights are permissible as long as the total weight remains
 /// positive. The algorithm should handle this without panicking.
 #[test]
-fn test_negative_weights_valid() {
+fn test_negative_weights_valid() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     // Total weight = 5.0 + (-1.0) = 4.0 > 0  →  valid input.
     let graph = CsrGraph::from_edges(
@@ -207,16 +225,18 @@ fn test_negative_weights_valid() {
 
     let partition = detector
         .detect(&graph)
-        .expect("graph with positive total weight should be valid despite negative edges");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 3);
     assert_quality_finite(partition.quality_score(), "negative weights");
+
+    Ok(())
 }
 
 /// A complete graph (every node connected to every other) should produce a
 /// valid, deterministic partition with finite quality.
 #[test]
-fn test_complete_graph() {
+fn test_complete_graph() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     // K5 — small enough to be fast, large enough to exercise the algorithm.
     let graph = CsrGraph::from_edges(
@@ -237,7 +257,7 @@ fn test_complete_graph() {
 
     let partition = detector
         .detect(&graph)
-        .expect("complete graph K5 should be valid");
+        .map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 5);
     assert_quality_finite(partition.quality_score(), "complete graph");
@@ -248,13 +268,18 @@ fn test_complete_graph() {
         (1..=5).contains(&count),
         "complete graph community count should be 1..=5, got {count}"
     );
+
+    Ok(())
 }
+
+/// A test case for quality finiteness: `(label, edges, node_count)`.
+type EdgeCase<'a> = (&'a str, Vec<(u32, u32, f64)>, usize);
 
 /// Across several graph shapes the returned quality score must always be
 /// finite — never NaN or ±Infinity.
 #[test]
-fn test_quality_finite() {
-    let cases: Vec<(&str, Vec<(u32, u32, f64)>, usize)> = vec![
+fn test_quality_finite() -> Result<(), String> {
+    let cases: Vec<EdgeCase> = vec![
         ("self_loop_single", vec![(0, 0, 1.0)], 1),
         ("two_node", vec![(0, 1, 1.0)], 2),
         ("triangle", vec![(0, 1, 1.0), (1, 2, 1.0), (2, 0, 1.0)], 3),
@@ -269,11 +294,11 @@ fn test_quality_finite() {
         let detector = create_detector_seeded(123);
         let graph = CsrGraph::from_edges(&edges, node_count);
 
-        match detector.detect(&graph) {
-            Ok(partition) => {
-                assert_quality_finite(partition.quality_score(), label);
-            }
-            Err(err) => panic!("{label}: unexpected error: {err}"),
-        }
+        let partition = detector
+            .detect(&graph)
+            .map_err(|e| format!("{label}: unexpected error: {e}"))?;
+        assert_quality_finite(partition.quality_score(), label);
     }
+
+    Ok(())
 }
