@@ -4,8 +4,8 @@
 //! when given the same seed, and that different seeds can produce
 //! different (but still valid) results.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::graph_view::GraphView;
@@ -62,7 +62,7 @@ fn run_leiden_default(graph: &CsrGraph) -> Result<Vec<u32>, String> {
 
 /// Validates that a partition is well-formed:
 /// - Membership vector length matches node count
-/// - All entries are valid community IDs (any u32 is valid)
+/// - All entries are valid community IDs (any `u32` is valid)
 fn is_valid_partition(membership: &[u32], node_count: usize) -> bool {
     membership.len() == node_count
 }
@@ -70,21 +70,22 @@ fn is_valid_partition(membership: &[u32], node_count: usize) -> bool {
 /// Test that running Leiden 10 times with the same seed produces identical
 /// membership vectors.
 #[test]
-fn test_same_seed_same_result() {
+fn test_same_seed_same_result() -> Result<(), String> {
     let graph = create_test_graph();
     let seed = 42u64;
     let iterations = 10;
 
-    let first_result = run_leiden_with_seed(&graph, seed).expect("first run should succeed");
+    let first_result = run_leiden_with_seed(&graph, seed)?;
 
     for i in 1..iterations {
-        let result = run_leiden_with_seed(&graph, seed)
-            .unwrap_or_else(|e| panic!("run {i} with seed {seed} should succeed: {e}"));
+        let result = run_leiden_with_seed(&graph, seed)?;
         assert_eq!(
             first_result, result,
             "membership vectors differ between run 0 and run {i} with seed {seed}"
         );
     }
+
+    Ok(())
 }
 
 /// Test that running Leiden with different seeds may produce different results
@@ -94,7 +95,7 @@ fn test_same_seed_same_result() {
 /// same result by coincidence. This test verifies that at least one different
 /// seed produces a different result, and that all results are valid partitions.
 #[test]
-fn test_different_seeds_may_differ() {
+fn test_different_seeds_may_differ() -> Result<(), String> {
     let graph = create_test_graph();
     let seeds = [42u64, 123u64, 456u64, 789u64, 1000u64];
     let node_count = graph.node_count();
@@ -104,18 +105,16 @@ fn test_different_seeds_may_differ() {
         .enumerate()
         .map(|(i, &seed)| {
             run_leiden_with_seed(&graph, seed)
-                .unwrap_or_else(|e| panic!("run with seed {seed} (index {i}) should succeed: {e}"))
+                .map_err(|e| format!("run with seed {seed} (index {i}) should succeed: {e}"))
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     // All results must be valid partitions
     for (i, result) in results.iter().enumerate() {
+        let seed = seeds[i];
         assert!(
             is_valid_partition(result, node_count),
-            "result for seed {} (index {}) is not a valid partition: {:?}",
-            seeds[i],
-            i,
-            result
+            "result for seed {seed} (index {i}) is not a valid partition: {result:?}",
         );
     }
 
@@ -129,27 +128,94 @@ fn test_different_seeds_may_differ() {
     assert!(
         any_different,
         "expected at least one different seed to produce a different result, \
-         but all seeds produced the same membership vector: {:?}",
-        first
+         but all seeds produced the same membership vector: {first:?}",
     );
+
+    Ok(())
 }
 
 /// Test that the default seed (42) is used when no seed is specified.
 ///
 /// This verifies that running with `LeidenConfig::default()` (which has
-/// `seed: None`) produces the same result as running with `seed: Some(42)`.
+/// `seed: None`) produces the same result as running with `seed: Some(42)`,
+/// both in terms of membership vector and bitwise-identical quality score.
 #[test]
-fn test_default_seed() {
+fn test_default_seed() -> Result<(), String> {
     let graph = create_test_graph();
 
-    let default_result = run_leiden_default(&graph).expect("default seed run should succeed");
-    let explicit_result =
-        run_leiden_with_seed(&graph, 42).expect("explicit seed 42 run should succeed");
+    let default_result = run_leiden_default(&graph)?;
+    let explicit_result = run_leiden_with_seed(&graph, 42)?;
 
     assert_eq!(
         default_result, explicit_result,
         "default config (seed=None) should produce the same result as seed=42"
     );
+
+    // Also verify bitwise-identical quality scores.
+    let default_quality = run_leiden_default_quality(&graph)?;
+    let explicit_quality = run_leiden_with_seed_quality(&graph, 42)?;
+    assert_eq!(
+        default_quality.to_bits(),
+        explicit_quality.to_bits(),
+        "default config (seed=None) should produce bitwise-identical Q as seed=42: \
+         default={default_quality:.17e}, explicit={explicit_quality:.17e}"
+    );
+
+    Ok(())
+}
+
+/// Runs the Leiden algorithm with a given seed and returns the quality score.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_seed_quality(graph: &CsrGraph, seed: u64) -> Result<f64, String> {
+    let config = LeidenConfig {
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Runs the Leiden algorithm with the default configuration and returns the quality score.
+fn run_leiden_default_quality(graph: &CsrGraph) -> Result<f64, String> {
+    let config = LeidenConfig::default();
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Test that running Leiden 10 times with the same seed produces bitwise-identical
+/// quality scores (all 17 significant digits of f64).
+///
+/// This goes beyond membership-vector equality and asserts that the raw `f64`
+/// quality value is identical down to the last bit, ensuring full determinism
+/// of the floating-point computation.
+#[test]
+fn test_same_seed_same_quality_bitwise() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+
+    let first_quality = run_leiden_with_seed_quality(&graph, seed)?;
+    let first_quality_bits = first_quality.to_bits();
+
+    for i in 1..iterations {
+        let quality = run_leiden_with_seed_quality(&graph, seed)?;
+        assert_eq!(
+            quality.to_bits(),
+            first_quality_bits,
+            "quality differs between run 0 and run {i} with seed {seed}: \
+             run0={first_quality:.17e}, run{i}={quality:.17e}"
+        );
+    }
+
+    Ok(())
 }
 
 /// Test determinism across 100 iterations with the same seed.
@@ -158,19 +224,132 @@ fn test_default_seed() {
 /// runs 100 iterations to catch any non-determinism that might only
 /// manifest after many runs.
 #[test]
-fn test_same_seed_same_result_100_iterations() {
+fn test_same_seed_same_result_100_iterations() -> Result<(), String> {
     let graph = create_test_graph();
     let seed = 99u64;
     let iterations = 100;
 
-    let first_result = run_leiden_with_seed(&graph, seed).expect("first run should succeed");
+    let first_result = run_leiden_with_seed(&graph, seed)?;
 
     for i in 1..iterations {
-        let result = run_leiden_with_seed(&graph, seed)
-            .unwrap_or_else(|e| panic!("run {i} with seed {seed} should succeed: {e}"));
+        let result = run_leiden_with_seed(&graph, seed)?;
         assert_eq!(
             first_result, result,
             "membership vectors differ between run 0 and run {i} with seed {seed} over {iterations} iterations"
         );
     }
+
+    Ok(())
+}
+
+/// Runs the Leiden algorithm with a given beta and seed, returning the membership vector.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_beta_and_seed(
+    graph: &CsrGraph,
+    beta: f64,
+    seed: u64,
+) -> Result<Vec<u32>, String> {
+    let config = LeidenConfig {
+        beta,
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.membership_vec().to_vec())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Runs the Leiden algorithm with a given beta and seed, returning the quality score.
+///
+/// Returns an error string if detection fails, so tests can use `?` propagation
+/// without unwrap/expect.
+fn run_leiden_with_beta_and_seed_quality(
+    graph: &CsrGraph,
+    beta: f64,
+    seed: u64,
+) -> Result<f64, String> {
+    let config = LeidenConfig {
+        beta,
+        seed: Some(seed),
+        ..Default::default()
+    };
+    let detector = Leiden::new(config);
+    detector
+        .detect(graph)
+        .map(|partition| partition.quality_score())
+        .map_err(|e| format!("Leiden detection failed: {e}"))
+}
+
+/// Test that with `beta = 0` (greedy deterministic), the algorithm produces
+/// bitwise-identical results across multiple runs with the same seed.
+///
+/// When `beta = 0`, only positive quality gains are accepted and the max-gain
+/// candidate is always selected. Combined with a fixed seed, the refinement
+/// phase becomes fully deterministic, so both membership vectors and quality
+/// scores must be bitwise-identical across runs.
+#[test]
+fn test_beta_zero_greedy_deterministic() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+
+    let first_membership = run_leiden_with_beta_and_seed(&graph, 0.0, seed)?;
+    let first_quality = run_leiden_with_beta_and_seed_quality(&graph, 0.0, seed)?;
+    let first_quality_bits = first_quality.to_bits();
+
+    for i in 1..iterations {
+        let membership = run_leiden_with_beta_and_seed(&graph, 0.0, seed)?;
+        assert_eq!(
+            first_membership, membership,
+            "beta=0 membership vectors differ between run 0 and run {i} with seed {seed}"
+        );
+
+        let quality = run_leiden_with_beta_and_seed_quality(&graph, 0.0, seed)?;
+        assert_eq!(
+            quality.to_bits(),
+            first_quality_bits,
+            "beta=0 quality differs between run 0 and run {i} with seed {seed}: \
+             run0={first_quality:.17e}, run{i}={quality:.17e}"
+        );
+    }
+
+    Ok(())
+}
+
+/// Test that with `beta = 1` (uniform random), the algorithm produces valid
+/// partitions with finite quality scores.
+///
+/// When `beta = 1`, all neighboring communities are accepted as candidates and
+/// selection is uniformly random. Even with the same seed, results may differ
+/// across runs due to randomness in node ordering and candidate selection.
+/// This test verifies that all results are well-formed partitions and that
+/// quality scores are finite.
+#[test]
+fn test_beta_one_uniform_random() -> Result<(), String> {
+    let graph = create_test_graph();
+    let seed = 42u64;
+    let iterations = 10;
+    let node_count = graph.node_count();
+
+    for i in 0..iterations {
+        let membership = run_leiden_with_beta_and_seed(&graph, 1.0, seed)
+            .map_err(|e| format!("beta=1 run {i} should succeed: {e}"))?;
+        assert!(
+            is_valid_partition(&membership, node_count),
+            "beta=1 run {i} produced invalid partition: {membership:?}",
+        );
+
+        let quality = run_leiden_with_beta_and_seed_quality(&graph, 1.0, seed)
+            .map_err(|e| format!("beta=1 run {i} quality should succeed: {e}"))?;
+        assert!(
+            quality.is_finite(),
+            "beta=1 run {i} produced non-finite quality: {quality}",
+        );
+    }
+
+    Ok(())
 }
