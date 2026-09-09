@@ -227,14 +227,14 @@ mod tests {
     #[test]
     fn test_new_initializes_fields() {
         let state = ConvergenceState::new();
-        assert_eq!(state.previous_quality, f64::NEG_INFINITY);
+        assert!(state.previous_quality.is_infinite() && state.previous_quality.is_sign_negative());
         assert_eq!(state.iterations_below_threshold, 0);
         assert_eq!(state.total_iterations, 0);
         assert!(state.quality_window.is_empty());
         assert_eq!(state.nodes_moved, 0);
         assert_eq!(state.consecutive_zero_movement, 0);
         assert!(state.best_membership.is_empty());
-        assert_eq!(state.best_quality, f64::NEG_INFINITY);
+        assert!(state.best_quality.is_infinite() && state.best_quality.is_sign_negative());
         assert!(!state.converged);
     }
 
@@ -244,7 +244,7 @@ mod tests {
         let events = state.update(0.5, 1e-6, ConvergenceMode::Absolute, 3);
         assert_eq!(state.nodes_moved, 3);
         assert_eq!(state.consecutive_zero_movement, 0);
-        assert!(!events.is_empty() || true); // events may vary
+        let _ = events; // events may vary
     }
 
     #[test]
@@ -288,15 +288,15 @@ mod tests {
         let mut state = ConvergenceState::new();
         state.update_best(&[0, 0, 1, 1], 0.5);
         assert_eq!(state.best_membership, vec![0, 0, 1, 1]);
-        assert_eq!(state.best_quality, 0.5);
+        assert!((state.best_quality - 0.5).abs() < f64::EPSILON);
         // Lower quality should not update
         state.update_best(&[0, 1, 0, 1], 0.3);
         assert_eq!(state.best_membership, vec![0, 0, 1, 1]);
-        assert_eq!(state.best_quality, 0.5);
+        assert!((state.best_quality - 0.5).abs() < f64::EPSILON);
         // Higher quality should update
         state.update_best(&[0, 1, 2, 3], 0.7);
         assert_eq!(state.best_membership, vec![0, 1, 2, 3]);
-        assert_eq!(state.best_quality, 0.7);
+        assert!((state.best_quality - 0.7).abs() < f64::EPSILON);
     }
 
     #[test]
