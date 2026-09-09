@@ -31,7 +31,9 @@ impl HierarchicalTree {
     ///
     /// Returns [`PartitionError::InvalidLevel`] if `level` is out of bounds.
     pub fn at_level(&self, level: usize) -> Result<&Partition, PartitionError> {
-        self.levels.get(level).ok_or(PartitionError::InvalidLevel { level })
+        self.levels
+            .get(level)
+            .ok_or(PartitionError::InvalidLevel { level })
     }
 
     /// Returns all hierarchy levels as a slice.
