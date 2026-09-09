@@ -93,7 +93,7 @@ impl Leiden {
     ) -> Result<f64, GraphError> {
         let mut one_indexed = vec![0_u32; 1];
         one_indexed.extend_from_slice(membership);
-        let partition = Partition::new(one_indexed, 0.0, false);
+        let partition = Partition::new(one_indexed, 0.0, 0, false);
 
         match self.quality_function {
             QualityFunction::Modularity => {
@@ -126,7 +126,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
 
         // Handle empty graph (0 nodes).
         if graph.node_count() == 0 {
-            return Ok(Partition::new(Vec::new(), 0.0, true));
+            return Ok(Partition::new(Vec::new(), 0.0, 0, true));
         }
 
         // Handle graph with no edges: each node in its own community.
@@ -134,7 +134,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         if total_weight <= 0.0 {
             let membership: Vec<u32> =
                 (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
-            return Ok(Partition::new(membership, 0.0, true));
+            return Ok(Partition::new(membership, 0.0, 0, true));
         }
 
         // Initialize membership: each node in its own community (singletons).
@@ -250,6 +250,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         Ok(Partition::new(
             conv_state.best_membership,
             conv_state.best_quality,
+            conv_state.total_iterations,
             converged,
         ))
     }
