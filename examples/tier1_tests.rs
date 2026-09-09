@@ -4,6 +4,15 @@
 //! community structure. These graphs have deterministic solutions that
 //! can be verified programmatically.
 
+#![expect(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::cast_possible_wrap,
+    clippy::float_cmp,
+    clippy::doc_markdown,
+    reason = "Example test code uses unwrap/expect for simplicity and has doc formatting"
+)]
+
 use communal_algo::leiden::{Leiden, LeidenConfig};
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
@@ -15,7 +24,8 @@ fn create_detector() -> Leiden {
     })
 }
 
-/// Complete graph K_n: all nodes should be in one community
+/// Complete graph `K_n`: all nodes should be in one community
+#[expect(clippy::unwrap_used, reason = "Example test code uses unwrap for simplicity")]
 fn test_complete_graph() {
     println!("=== Complete Graph K_5 ===");
     let n = 5;
@@ -27,15 +37,15 @@ fn test_complete_graph() {
     }
     let graph = CsrGraph::from_edges(&edges, n as usize);
     let detector = create_detector();
-    let partition = detector.detect(&graph).expect("detection should succeed");
-    
-    println!("  Nodes: {}, Edges: {}", n, edges.len());
+    let partition = detector.detect(&graph).unwrap();
+
+    println!("  Nodes: {n}, Edges: {}", edges.len());
     println!("  Communities: {} (expected: 1)", partition.community_count());
     println!("  Quality Q: {:.4}", partition.quality_score());
     println!("  Membership: {:?}", partition.membership_vec());
-    
+
     // Complete graph should have all nodes in one community
-    let unique_communities: std::collections::HashSet<u32> = 
+    let unique_communities: std::collections::HashSet<u32> =
         partition.membership_vec().iter().copied().collect();
     assert_eq!(unique_communities.len(), 1, "Complete graph should have 1 community");
     println!("  ✓ PASS: All nodes in single community\n");
@@ -72,18 +82,28 @@ fn test_complete_bipartite() {
 /// Graph with no edges: each node in its own community
 fn test_no_edges_graph() {
     println!("=== Graph with No Edges (5 nodes) ===");
-    let n = 5;
-    let graph = CsrGraph::from_edges(&[], n as usize);
+    let n: usize = 5;
+    let graph = CsrGraph::from_edges(&[], n);
     let detector = create_detector();
     let partition = detector.detect(&graph).expect("detection should succeed");
-    
-    println!("  Nodes: {}, Edges: 0", n);
-    println!("  Communities: {} (expected: {} singletons)", partition.community_count(), n);
+
+    println!("  Nodes: {n}, Edges: 0");
+    println!(
+        "  Communities: {} (expected: {n} singletons)",
+        partition.community_count()
+    );
     println!("  Quality Q: {:.4} (expected: 0.0)", partition.quality_score());
     println!("  Membership: {:?}", partition.membership_vec());
-    
-    assert_eq!(partition.community_count(), n as usize, "No-edge graph should have n singleton communities");
-    assert_eq!(partition.quality_score(), 0.0, "No-edge graph should have Q=0");
+
+    assert_eq!(
+        partition.community_count(),
+        n,
+        "No-edge graph should have n singleton communities"
+    );
+    assert!(
+        (partition.quality_score() - 0.0).abs() < f64::EPSILON,
+        "No-edge graph should have Q=0"
+    );
     println!("  ✓ PASS: All singletons, Q=0\n");
 }
 
