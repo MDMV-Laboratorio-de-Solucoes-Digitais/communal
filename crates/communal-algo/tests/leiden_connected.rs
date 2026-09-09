@@ -6,8 +6,8 @@
 //! 2. **Quality Monotonicity**: Quality never decreases between the initial
 //!    singleton partition and the final partition.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::quality::Modularity;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
@@ -60,7 +60,7 @@ fn is_connected(graph: &CsrGraph, nodes: &[u32]) -> bool {
         };
         for neighbor in graph.neighbors(node_id) {
             // Convert 1-based NodeId back to 0-based index.
-            let neighbor_id = neighbor.index().saturating_sub(1) as u32;
+            let neighbor_id = u32::try_from(neighbor.index().saturating_sub(1)).unwrap_or(0);
             if node_set.contains(&neighbor_id) && !visited.contains(&neighbor_id) {
                 stack.push(neighbor_id);
             }
@@ -86,27 +86,25 @@ fn is_connected(graph: &CsrGraph, nodes: &[u32]) -> bool {
 fn graph_strategy() -> impl Strategy<Value = (Vec<(u32, u32, f64)>, u32)> {
     (2u32..=6u32).prop_flat_map(|num_cliques| {
         // Generate clique sizes (each 3–8 nodes).
-        prop::collection::vec(3u32..=8u32, num_cliques as usize).prop_map(
-            move |clique_sizes| {
-                let node_count: u32 = clique_sizes.iter().sum();
-                let mut edges: Vec<(u32, u32, f64)> = Vec::new();
+        prop::collection::vec(3u32..=8u32, num_cliques as usize).prop_map(move |clique_sizes| {
+            let node_count: u32 = clique_sizes.iter().sum();
+            let mut edges: Vec<(u32, u32, f64)> = Vec::new();
 
-                // Build intra-clique edges (complete subgraphs).
-                let mut offset = 0u32;
-                for &size in &clique_sizes {
-                    for i in offset..offset + size {
-                        for j in (i + 1)..offset + size {
-                            // Deterministic weight based on node indices.
-                            let weight = 0.5 + ((i.wrapping_add(j)) % 50) as f64 / 100.0;
-                            edges.push((i, j, weight));
-                        }
+            // Build intra-clique edges (complete subgraphs).
+            let mut offset = 0u32;
+            for &size in &clique_sizes {
+                for i in offset..offset + size {
+                    for j in (i + 1)..offset + size {
+                        // Deterministic weight based on node indices.
+                        let weight = 0.5 + f64::from((i.wrapping_add(j)) % 50) / 100.0;
+                        edges.push((i, j, weight));
                     }
-                    offset += size;
                 }
+                offset += size;
+            }
 
-                (edges, node_count)
-            },
-        )
+            (edges, node_count)
+        })
     })
 }
 
@@ -148,8 +146,8 @@ fn test_all_communities_connected() {
             for (node_idx, &community_id) in membership.iter().enumerate() {
                 communities
                     .entry(community_id)
-                    .or_insert_with(Vec::new)
-                    .push(node_idx as u32);
+                    .or_default()
+                    .push(u32::try_from(node_idx).unwrap_or(0));
             }
 
             // Every community must be connected.
@@ -175,7 +173,7 @@ fn test_all_communities_connected() {
 /// weak bridge edge — a structure where Leiden should clearly improve quality
 /// by merging within each triangle.
 #[test]
-fn test_quality_monotonicity() {
+fn test_quality_monotonicity() -> Result<(), String> {
     // Two triangles (0-1-2 and 3-4-5) connected by a weak bridge (2-3).
     let edges = vec![
         (0, 1, 1.0),
@@ -190,7 +188,7 @@ fn test_quality_monotonicity() {
 
     // Compute initial quality: each node in its own community.
     let initial_membership: Vec<u32> = (0..6).collect();
-    let initial_partition = Partition::new(initial_membership, 0.0);
+    let initial_partition = Partition::new(initial_membership, 0.0, 0, false);
     let initial_quality = Modularity::new(1.0)
         .evaluate(&graph, &initial_partition)
         .unwrap_or(0.0);
@@ -202,15 +200,15 @@ fn test_quality_monotonicity() {
     });
     let final_partition = detector
         .detect(&graph)
-        .expect("Leiden detection should succeed on a valid graph");
+        .map_err(|e| format!("Leiden detection should succeed on a valid graph: {e}"))?;
     let final_quality = final_partition.quality_score();
 
     assert!(
         final_quality >= initial_quality - 1e-10,
-        "quality decreased: initial={}, final={}",
-        initial_quality,
-        final_quality
+        "quality decreased: initial={initial_quality}, final={final_quality}"
     );
+
+    Ok(())
 }
 
 /// Basic determinism test: running Leiden twice with the same seed produces
@@ -219,7 +217,7 @@ fn test_quality_monotonicity() {
 /// Uses a graph with two triangles connected by a bridge — a non-trivial
 /// structure where the algorithm has meaningful choices to make.
 #[test]
-fn test_determinism_basic() {
+fn test_determinism_basic() -> Result<(), String> {
     let edges = vec![
         (0, 1, 1.0),
         (1, 2, 1.0),
@@ -241,10 +239,10 @@ fn test_determinism_basic() {
 
     let result1 = detector1
         .detect(&graph)
-        .expect("first detection should succeed");
+        .map_err(|e| format!("first detection should succeed: {e}"))?;
     let result2 = detector2
         .detect(&graph)
-        .expect("second detection should succeed");
+        .map_err(|e| format!("second detection should succeed: {e}"))?;
 
     assert_eq!(
         result1.membership_vec(),
@@ -256,8 +254,8 @@ fn test_determinism_basic() {
     let q2 = result2.quality_score();
     assert!(
         (q1 - q2).abs() < 1e-10,
-        "same seed should produce identical quality: {} vs {}",
-        q1,
-        q2
+        "same seed should produce identical quality: {q1} vs {q2}"
     );
+
+    Ok(())
 }
