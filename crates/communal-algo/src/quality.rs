@@ -58,7 +58,10 @@ impl Modularity {
     /// * `node_degrees` — Weighted degree for each node (indexed by `NodeId::index()`).
     /// * `community_degree_sums` — Sum of degrees for each community.
     #[must_use]
-    #[expect(clippy::too_many_arguments, reason = "Required by the Leiden algorithm interface")]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Required by the Leiden algorithm interface"
+    )]
     pub fn delta_q(
         &self,
         graph: &impl GraphView,
@@ -130,7 +133,9 @@ impl QualityMetric for Modularity {
                 continue;
             };
             for neighbor in graph.neighbors(node_i) {
-                if neighbor.index() >= i && let Some(w) = graph.edge_weight(node_i, neighbor) {
+                if neighbor.index() >= i
+                    && let Some(w) = graph.edge_weight(node_i, neighbor)
+                {
                     m += w;
                 }
             }
@@ -232,7 +237,10 @@ impl Cpm {
     /// * `target_community` — The target community ID.
     /// * `community_sizes` — Number of nodes in each community.
     #[must_use]
-    #[expect(clippy::cast_precision_loss, reason = "Community sizes are small values that fit precisely in f64")]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "Community sizes are small values that fit precisely in f64"
+    )]
     pub fn delta_q(
         &self,
         graph: &impl GraphView,
@@ -288,7 +296,10 @@ impl Cpm {
 }
 
 impl QualityMetric for Cpm {
-    #[expect(clippy::cast_precision_loss, reason = "Community sizes are small values that fit precisely in f64")]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "Community sizes are small values that fit precisely in f64"
+    )]
     fn evaluate(&self, graph: &impl GraphView, partition: &Partition) -> Result<f64, MetricsError> {
         let node_count = graph.node_count();
         let comm_count = partition.community_count();
