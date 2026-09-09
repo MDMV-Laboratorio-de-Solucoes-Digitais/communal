@@ -3,6 +3,15 @@
 //! Reads graph files and ground truth from disk, runs Leiden algorithm,
 //! and computes NMI/ARI against the planted partition.
 
+#![expect(
+    clippy::cast_precision_loss,
+    clippy::manual_midpoint,
+    clippy::float_cmp,
+    clippy::uninlined_format_args,
+    clippy::needless_range_loop,
+    reason = "Example code has casts, float comparisons, and format strings"
+)]
+
 use communal_algo::leiden::{Leiden, LeidenConfig};
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
