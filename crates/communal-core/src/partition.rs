@@ -69,16 +69,4 @@ impl Partition {
         unique.dedup();
         unique.len()
     }
-
-    /// Checks if any community is internally disconnected.
-    ///
-    /// This is a simplified placeholder that always returns `false`.
-    /// A full implementation would require a graph reference for BFS/DFS.
-    ///
-    /// Community connectivity is verified separately in the Leiden refinement
-    /// phase via `debug_assert!` checks (FR-010).
-    #[must_use]
-    pub fn has_disconnected_communities(&self) -> bool {
-        false
-    }
 }
