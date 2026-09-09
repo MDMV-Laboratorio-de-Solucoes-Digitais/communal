@@ -4,8 +4,8 @@
 //! algorithm behaves correctly under unusual but valid inputs — without
 //! panicking, returning NaN/Inf, or violating basic invariants.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::id::NodeId;
@@ -54,9 +54,7 @@ fn test_empty_graph() -> Result<(), String> {
     let detector = create_detector();
     let graph = CsrGraph::from_edges(&[], 0);
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
     assert_eq!(partition.membership_vec().len(), 0);
     assert!(
         (partition.quality_score() - 0.0).abs() < f64::EPSILON,
@@ -76,9 +74,7 @@ fn test_single_node() -> Result<(), String> {
     // does not reject the graph as "non-positive total weight".
     let graph = CsrGraph::from_edges(&[(0, 0, 1.0)], 1);
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(
         partition.membership_vec().len(),
@@ -101,9 +97,7 @@ fn test_single_edge() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     let graph = CsrGraph::from_edges(&[(0, 1, 1.0)], 2);
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 2);
 
@@ -134,9 +128,7 @@ fn test_self_loops() -> Result<(), String> {
         3,
     );
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 3);
     assert_quality_finite(partition.quality_score(), "self-loops");
@@ -151,16 +143,14 @@ fn test_zero_weights() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     let graph = CsrGraph::from_edges(
         &[
-            (0, 1, 1.0),  // positive edge — keeps total weight > 0
-            (1, 2, 0.0),  // zero-weight edge
-            (2, 3, 0.0),  // zero-weight edge
+            (0, 1, 1.0), // positive edge — keeps total weight > 0
+            (1, 2, 0.0), // zero-weight edge
+            (2, 3, 0.0), // zero-weight edge
         ],
         4,
     );
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 4);
     assert_quality_finite(partition.quality_score(), "zero weights");
@@ -177,29 +167,23 @@ fn test_disconnected_components() -> Result<(), String> {
     // Component A: triangle 0-1-2
     // Component B: single edge 3-4
     // No edges between {0,1,2} and {3,4}.
-    let graph = CsrGraph::from_edges(
-        &[
-            (0, 1, 1.0),
-            (1, 2, 1.0),
-            (2, 0, 1.0),
-            (3, 4, 1.0),
-        ],
-        5,
-    );
+    let graph = CsrGraph::from_edges(&[(0, 1, 1.0), (1, 2, 1.0), (2, 0, 1.0), (3, 4, 1.0)], 5);
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 5);
     assert_quality_finite(partition.quality_score(), "disconnected components");
 
     // Every node in component A must be in a community that no node from
     // component B belongs to, and vice-versa.
-    let communities_a: std::collections::HashSet<u32> =
-        [0, 1, 2].iter().filter_map(|&i| community_of(&partition, i)).collect();
-    let communities_b: std::collections::HashSet<u32> =
-        [3, 4].iter().filter_map(|&i| community_of(&partition, i)).collect();
+    let communities_a: std::collections::HashSet<u32> = [0, 1, 2]
+        .iter()
+        .filter_map(|&i| community_of(&partition, i))
+        .collect();
+    let communities_b: std::collections::HashSet<u32> = [3, 4]
+        .iter()
+        .filter_map(|&i| community_of(&partition, i))
+        .collect();
 
     assert!(
         communities_a.is_disjoint(&communities_b),
@@ -215,17 +199,9 @@ fn test_disconnected_components() -> Result<(), String> {
 fn test_negative_weights_valid() -> Result<(), String> {
     let detector = create_detector_seeded(42);
     // Total weight = 5.0 + (-1.0) = 4.0 > 0  →  valid input.
-    let graph = CsrGraph::from_edges(
-        &[
-            (0, 1, 5.0),
-            (1, 2, -1.0),
-        ],
-        3,
-    );
+    let graph = CsrGraph::from_edges(&[(0, 1, 5.0), (1, 2, -1.0)], 3);
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 3);
     assert_quality_finite(partition.quality_score(), "negative weights");
@@ -255,9 +231,7 @@ fn test_complete_graph() -> Result<(), String> {
         5,
     );
 
-    let partition = detector
-        .detect(&graph)
-        .map_err(|e| e.to_string())?;
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
 
     assert_eq!(partition.membership_vec().len(), 5);
     assert_quality_finite(partition.quality_score(), "complete graph");
