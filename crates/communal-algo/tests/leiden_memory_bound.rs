@@ -24,8 +24,8 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 ///
 /// Derived from:
 /// - CSR: 2·E·4 + (V+1)·4 ≈ 12·E + 4·V bytes
-/// - Cached state: O(V + E) with FxHashMap overhead
-/// - Conservative constant: 500 bytes per (V + E)
+/// - Cached state: O(V + E) with `FxHashMap` overhead
+/// - Conservative constant: 500 bytes per (`V + E`)
 const MEMORY_BOUND_BYTES_PER_ELEMENT: usize = 500;
 
 /// Creates a ring graph with additional edges.
@@ -38,7 +38,9 @@ fn create_ring_with_chords(n: usize) -> CsrGraph {
     // Ring edges
     for i in 0..n {
         let j = (i + 1) % n;
-        edges.push((i as u32, j as u32, 1.0));
+        let i_u32 = u32::try_from(i).unwrap_or(0);
+        let j_u32 = u32::try_from(j).unwrap_or(0);
+        edges.push((i_u32, j_u32, 1.0));
     }
 
     // Additional edges (deterministic pattern)
@@ -46,7 +48,9 @@ fn create_ring_with_chords(n: usize) -> CsrGraph {
         for dist in 2..=5 {
             let j = (i + dist) % n;
             if i < j {
-                edges.push((i as u32, j as u32, 0.5));
+                let i_u32 = u32::try_from(i).unwrap_or(0);
+                let j_u32 = u32::try_from(j).unwrap_or(0);
+                edges.push((i_u32, j_u32, 0.5));
             }
         }
     }
@@ -74,6 +78,7 @@ fn profile_memory(graph: &CsrGraph) -> Result<usize, String> {
 
 /// Test memory bound and scaling in a single function (dhat limitation).
 #[test]
+#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
 fn test_memory_bound_and_scaling() {
     // Test memory bound on graphs of increasing size.
     let sizes: Vec<usize> = vec![100, 500, 1000];
@@ -109,7 +114,9 @@ fn test_memory_bound_and_scaling() {
     });
 
     // Linear scaling: bytes2 should be < 4x bytes1 (quadratic would be ~4x)
-    let ratio = bytes2 as f64 / bytes1.max(1) as f64;
+    let bytes1_f64 = f64::from(u32::try_from(bytes1.max(1)).unwrap_or(u32::MAX));
+    let bytes2_f64 = f64::from(u32::try_from(bytes2).unwrap_or(u32::MAX));
+    let ratio = bytes2_f64 / bytes1_f64;
     assert!(
         ratio < 4.0,
         "memory scaling ratio {ratio:.2}x suggests non-linear growth: \
