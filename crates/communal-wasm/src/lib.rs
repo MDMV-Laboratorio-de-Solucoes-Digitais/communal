@@ -23,6 +23,10 @@ use wasm_bindgen::prelude::*;
 ///
 /// A `JsValue` containing the membership vector (`Vec<u32>`) where element `i`
 /// is the community ID assigned to node `i`.
+///
+/// # Errors
+///
+/// Returns `Err(JsValue)` if edge parsing fails or community detection fails.
 #[wasm_bindgen]
 pub fn detect_communities(edges: JsValue, node_count: usize) -> Result<JsValue, JsValue> {
     let edge_vec: Vec<(u32, u32, f64)> = serde_wasm_bindgen::from_value(edges)
