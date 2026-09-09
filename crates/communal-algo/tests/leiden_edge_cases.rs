@@ -276,3 +276,60 @@ fn test_quality_finite() -> Result<(), String> {
 
     Ok(())
 }
+
+/// When all nodes start in the same initial community (as happens in a
+/// complete graph where every node is connected to every other), the
+/// algorithm must still converge to a valid partition with finite quality.
+///
+/// This exercises FR-008: the Leiden algorithm's ability to handle the
+/// degenerate case where the initial partition places all nodes in a single
+/// community, and the refinement/aggregation phases must correctly decide
+/// whether to keep them together or split them.
+#[test]
+fn test_all_nodes_same_initial_community() -> Result<(), String> {
+    let detector = create_detector_seeded(42);
+    // K4 — every node connected to every other with uniform weight.
+    // All nodes are structurally equivalent and would naturally start in
+    // the same community.
+    let graph = CsrGraph::from_edges(
+        &[
+            (0, 1, 1.0),
+            (0, 2, 1.0),
+            (0, 3, 1.0),
+            (1, 2, 1.0),
+            (1, 3, 1.0),
+            (2, 3, 1.0),
+        ],
+        4,
+    );
+
+    let partition = detector.detect(&graph).map_err(|e| e.to_string())?;
+
+    // The partition must cover all nodes.
+    assert_eq!(
+        partition.membership_vec().len(),
+        4,
+        "partition must cover all 4 nodes"
+    );
+
+    // Quality must be finite — no NaN or ±Inf.
+    assert_quality_finite(partition.quality_score(), "all-same-initial-community");
+
+    // Community count must be valid: at least 1, at most 4.
+    let count = partition.community_count();
+    assert!(
+        (1..=4).contains(&count),
+        "community count should be 1..=4, got {count}"
+    );
+
+    // Every node must be assigned to some community (no unassigned nodes).
+    for node_idx in 0..4 {
+        let community = community_of(&partition, node_idx);
+        assert!(
+            community.is_some(),
+            "node {node_idx} must be assigned to a community"
+        );
+    }
+
+    Ok(())
+}
