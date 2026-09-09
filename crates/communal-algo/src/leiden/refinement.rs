@@ -7,11 +7,11 @@
 use communal_core::graph_view::GraphView;
 use communal_core::id::NodeId;
 use communal_core::partition::Partition;
-use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use rand_chacha::ChaCha8Rng;
 
-use crate::leiden::local_moving::{would_remain_connected, LocalMoveState};
+use crate::leiden::local_moving::{LocalMoveState, would_remain_connected};
 use crate::quality::{Cpm, Modularity, QualityFunction};
 
 /// Runs the randomized refinement phase.
@@ -87,7 +87,13 @@ pub fn refinement<G: GraphView>(
             && would_remain_connected(graph, membership, node, current_community)
         {
             // Apply the move using cached state (subtract-add repair).
-            state.apply_move(node_idx, current_community, target_community);
+            state.apply_move(
+                graph,
+                node_idx,
+                current_community,
+                target_community,
+                membership,
+            );
             state.invalidate_neighbors(graph, node);
             // Invalidate the moved node's own neighbor cache (FR-002).
             if node_idx < state.neighbor_caches.len() {
@@ -192,10 +198,25 @@ fn select_target_community<G: GraphView>(
         }
     }
 
-    candidates
-        .into_iter()
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Less))
-        .map(|(c, _)| c)
+    if candidates.is_empty() {
+        return None;
+    }
+
+    // Beta-weighted probabilistic selection.
+    //
+    // - beta = 0: greedy — only positive gains were accepted, select max.
+    // - beta = 1: uniform random — all gains were accepted, pick any.
+    // - 0 < beta < 1: with probability beta, pick uniformly at random;
+    //   otherwise select the max-gain candidate.
+    if params.beta > 0.0 && params.rng.random::<f64>() < params.beta {
+        let idx = params.rng.random_range(0..candidates.len());
+        Some(candidates[idx].0)
+    } else {
+        candidates
+            .into_iter()
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Less))
+            .map(|(c, _)| c)
+    }
 }
 
 /// Collects neighboring communities and their edge weights using the lazy cache.
@@ -235,9 +256,8 @@ fn verify_communities_connected<G: GraphView>(graph: &G, membership: &[u32]) -> 
 
         while let Some(current) = stack.pop() {
             if visited.insert(current)
-                && let Some(current_node) = NodeId::new(
-                    u32::try_from(current).unwrap_or(u32::MAX).wrapping_add(1),
-                )
+                && let Some(current_node) =
+                    NodeId::new(u32::try_from(current).unwrap_or(u32::MAX).wrapping_add(1))
             {
                 for neighbor in graph.neighbors(current_node) {
                     let neighbor_idx = neighbor.index() - 1;
