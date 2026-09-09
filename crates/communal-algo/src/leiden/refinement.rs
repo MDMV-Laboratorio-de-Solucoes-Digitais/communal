@@ -52,7 +52,7 @@ pub fn refinement<G: GraphView>(
     }
 
     // Create partition from membership for delta_q calls.
-    let mut partition = Partition::new(membership.to_vec(), 0.0, false);
+    let mut partition = Partition::new(membership.to_vec(), 0.0, 0, false);
 
     let total_weight_m = state.total_weight_m;
 
@@ -104,7 +104,7 @@ pub fn refinement<G: GraphView>(
             membership[node_idx] = target_community;
 
             // Update partition to reflect the new membership.
-            partition = Partition::new(membership.to_vec(), 0.0, false);
+            partition = Partition::new(membership.to_vec(), 0.0, 0, false);
         }
     }
 
