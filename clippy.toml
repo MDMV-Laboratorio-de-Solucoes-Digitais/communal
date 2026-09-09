@@ -1,0 +1,4 @@
+# Allow multiple versions of crates that have incompatible transitive
+# dependency requirements. These are common in the Rust ecosystem and
+# cannot be unified without breaking other dependencies.
+allowed-duplicate-crates = ["syn", "hashbrown"]
