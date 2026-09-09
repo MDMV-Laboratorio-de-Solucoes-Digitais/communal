@@ -188,7 +188,7 @@ fn test_quality_monotonicity() -> Result<(), String> {
 
     // Compute initial quality: each node in its own community.
     let initial_membership: Vec<u32> = (0..6).collect();
-    let initial_partition = Partition::new(initial_membership, 0.0, false);
+    let initial_partition = Partition::new(initial_membership, 0.0, 0, false);
     let initial_quality = Modularity::new(1.0)
         .evaluate(&graph, &initial_partition)
         .unwrap_or(0.0);
