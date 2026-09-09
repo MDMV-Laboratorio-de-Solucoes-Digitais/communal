@@ -294,3 +294,9 @@
 - [X] T068 Expose iteration count from `Partition` (add `iterations: usize` field + getter) and assert SC-007 median iteration reduction (`median_optimized ≤ 0.5 × median_baseline`) in `leiden_iteration_benchmark.rs` per SC-007, US2/AC1 (partial)
 - [X] T069 Call `LocalMoveState::check_and_repair()` in the main loop (`mod.rs`) in debug builds so the FP-drift fallback detector repairs cached community weight sums when they diverge from full graph traversal by more than 1e-4, per FR-002 (partial)
 - [X] T070 Add test verifying ascending-NodeId accumulation order in `compute_all` produces deterministic cross-platform results for cached community statistics per FR-011 (partial)
+
+## Phase 10: Convergence
+
+> Appended by `/speckit-converge` (2026-09-09). Each item traces to its source requirement/decision and carries its gap type. Existing tasks were NOT modified or renumbered.
+
+- [X] T071 Expose iteration count from `Partition` (add `iterations: usize` field + getter) and assert SC-007 median iteration reduction (`median_optimized ≤ 0.5 × median_baseline`) in `leiden_iteration_benchmark.rs` per SC-007 (partial)
