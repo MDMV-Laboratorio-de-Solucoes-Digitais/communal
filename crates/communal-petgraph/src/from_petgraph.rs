@@ -9,15 +9,16 @@ use communal_core::csr::CsrGraph;
 ///
 /// Panics if any node index in `graph` is out of bounds for the CSR representation.
 #[must_use]
-pub fn from_petgraph<N, E, Ty: petgraph::EdgeType>(
-    graph: &petgraph::Graph<N, E, Ty>,
-) -> CsrGraph
+pub fn from_petgraph<N, E, Ty: petgraph::EdgeType>(graph: &petgraph::Graph<N, E, Ty>) -> CsrGraph
 where
     E: Clone + Into<f64>,
 {
     let mut edges = Vec::new();
     for edge in graph.edge_indices() {
-        #[expect(clippy::expect_used, reason = "edge indices from graph.edge_indices() are always valid")]
+        #[expect(
+            clippy::expect_used,
+            reason = "edge indices from graph.edge_indices() are always valid"
+        )]
         let (source, target) = graph
             .edge_endpoints(edge)
             .expect("edge indices obtained from graph.edge_indices() are always valid");
