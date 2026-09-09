@@ -1,7 +1,7 @@
 //! Iteration reduction benchmark tests for the Leiden algorithm.
 //!
-//! Verifies SC-007: the optimized Leiden achieves ≤ 50% median iteration
-//! count compared to baseline (convergence_threshold=0) on easy-to-converge
+//! Verifies `SC-007`: the optimized Leiden achieves ≤ 50% median iteration
+//! count compared to baseline (`convergence_threshold=0`) on easy-to-converge
 //! graphs, while maintaining quality within 1e-6 epsilon.
 
 use communal_algo::leiden::config::LeidenConfig;
@@ -82,7 +82,7 @@ fn run_optimized(graph: &CsrGraph, seed: u64) -> Result<f64, String> {
     run_leiden(graph, config)
 }
 
-/// Runs Leiden with convergence_threshold=0 (baseline: no early termination).
+/// Runs Leiden with `convergence_threshold=0` (baseline: no early termination).
 fn run_baseline(graph: &CsrGraph, seed: u64) -> Result<f64, String> {
     let config = LeidenConfig {
         seed: Some(seed),
@@ -96,6 +96,7 @@ fn run_baseline(graph: &CsrGraph, seed: u64) -> Result<f64, String> {
 /// Test that optimized Leiden converges to the same quality as baseline
 /// on the two-triangles graph across 30 trials.
 #[test]
+#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
 fn test_optimized_quality_matches_baseline_two_triangles() {
     let graph = create_two_triangles();
 
@@ -120,6 +121,7 @@ fn test_optimized_quality_matches_baseline_two_triangles() {
 /// Test that optimized Leiden converges to the same quality as baseline
 /// on the two-K₄-cliques graph across 30 trials.
 #[test]
+#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
 fn test_optimized_quality_matches_baseline_two_k4() {
     let graph = create_two_k4_cliques();
 
@@ -143,6 +145,7 @@ fn test_optimized_quality_matches_baseline_two_k4() {
 
 /// Test that both optimized and baseline converge on easy-to-converge graphs.
 #[test]
+#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
 fn test_both_converge_on_easy_graphs() {
     let graphs: Vec<(&str, CsrGraph)> = vec![
         ("two_triangles", create_two_triangles()),
@@ -151,10 +154,10 @@ fn test_both_converge_on_easy_graphs() {
 
     for (name, graph) in &graphs {
         let seed = 42u64;
-        let optimized_q = run_optimized(&graph, seed).unwrap_or_else(|e| {
+        let optimized_q = run_optimized(graph, seed).unwrap_or_else(|e| {
             panic!("{name}: optimized run failed: {e}");
         });
-        let baseline_q = run_baseline(&graph, seed).unwrap_or_else(|e| {
+        let baseline_q = run_baseline(graph, seed).unwrap_or_else(|e| {
             panic!("{name}: baseline run failed: {e}");
         });
 
