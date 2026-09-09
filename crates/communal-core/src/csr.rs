@@ -1,4 +1,4 @@
-use crate::graph_view::{private::Sealed, GraphView, MultilayerView};
+use crate::graph_view::{GraphView, MultilayerView, private::Sealed};
 use crate::id::NodeId;
 
 /// Compressed Sparse Row (CSR) graph representation.
@@ -98,7 +98,7 @@ impl GraphView for CsrGraph {
         let end = self.row_ptr[idx + 1] as usize;
         let to_0based = to.index() - 1;
         for i in start..end {
-            if self.col_idx[i] == to_0based as u32 {
+            if self.col_idx[i] == u32::try_from(to_0based).unwrap_or(0) {
                 return Some(self.weights[i]);
             }
         }
