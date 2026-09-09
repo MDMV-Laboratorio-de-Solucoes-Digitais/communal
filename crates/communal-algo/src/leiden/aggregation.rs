@@ -97,10 +97,7 @@ pub fn aggregation<G: GraphView>(graph: &G, membership: &[u32]) -> AggregationRe
         }
     }
 
-    let reduced_graph = CsrGraph::from_edges(
-        &edges,
-        community_count,
-    );
+    let reduced_graph = CsrGraph::from_edges(&edges, community_count);
 
     AggregationResult {
         community_to_nodes,
