@@ -68,10 +68,7 @@ impl LeidenConfig {
 
         if self.max_iterations < 1 {
             return Err(AlgorithmError::InvalidConfiguration {
-                reason: format!(
-                    "max_iterations must be >= 1, got {}",
-                    self.max_iterations
-                ),
+                reason: format!("max_iterations must be >= 1, got {}", self.max_iterations),
             });
         }
 
