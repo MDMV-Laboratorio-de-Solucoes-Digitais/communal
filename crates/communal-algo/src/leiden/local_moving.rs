@@ -116,10 +116,9 @@ impl LocalMoveState {
 
         // Compute weighted node degrees (fixed for the graph).
         let mut node_degrees = vec![0.0_f64; node_count + 1];
-        for i in 1..=node_count {
-            let Some(node) = NodeId::new(u32::try_from(i).unwrap_or(0)) else {
-                continue;
-            };
+        for (i, node) in (1..=node_count)
+            .filter_map(|i| NodeId::new(u32::try_from(i).unwrap_or(0)).map(|n| (i, n)))
+        {
             for neighbor in graph.neighbors(node) {
                 if let Some(w) = graph.edge_weight(node, neighbor) {
                     node_degrees[i] += w;
@@ -155,16 +154,16 @@ impl LocalMoveState {
                     let neighbor_idx = neighbor.index().saturating_sub(1);
                     if neighbor_idx < membership.len() {
                         let neighbor_comm = membership[neighbor_idx] as usize;
-                        if node_comm == neighbor_comm {
-                            if let Some(w) = graph.edge_weight(node, neighbor) {
-                                if neighbor.index() == i {
-                                    // Self-loop: count once (matching igraph convention).
-                                    community_internal_weights[node_comm] += w;
-                                } else {
-                                    // Regular edge: count once (will not be counted again
-                                    // when we visit the neighbor node).
-                                    community_internal_weights[node_comm] += w;
-                                }
+                        if node_comm == neighbor_comm
+                            && let Some(w) = graph.edge_weight(node, neighbor)
+                        {
+                            if neighbor.index() == i {
+                                // Self-loop: count once (matching igraph convention).
+                                community_internal_weights[node_comm] += w;
+                            } else {
+                                // Regular edge: count once (will not be counted again
+                                // when we visit the neighbor node).
+                                community_internal_weights[node_comm] += w;
                             }
                         }
                     }
@@ -274,6 +273,7 @@ impl LocalMoveState {
     }
 
     /// Returns `true` if periodic recomputation is due.
+    #[must_use]
     pub fn needs_full_recompute(&self, interval: u32) -> bool {
         self.incremental_updates >= interval
     }
@@ -300,8 +300,8 @@ impl LocalMoveState {
         let mut actual_degree_sums = vec![0.0_f64; max_community + 1];
         let mut actual_sizes = vec![0_usize; max_community + 1];
 
-        for i in 0..membership.len() {
-            let comm = membership[i] as usize;
+        for (i, &comm) in membership.iter().enumerate() {
+            let comm = comm as usize;
             if comm < actual_degree_sums.len() {
                 actual_degree_sums[comm] += self.node_degrees[i + 1];
                 actual_sizes[comm] += 1;
@@ -310,15 +310,13 @@ impl LocalMoveState {
 
         // Compare cached vs actual.
         for comm in 0..=max_community {
-            if comm < self.community_degree_sums.len() {
-                if (self.community_degree_sums[comm] - actual_degree_sums[comm]).abs() > epsilon {
-                    return false;
-                }
+            if comm < self.community_degree_sums.len()
+                && (self.community_degree_sums[comm] - actual_degree_sums[comm]).abs() > epsilon
+            {
+                return false;
             }
-            if comm < self.community_sizes.len() {
-                if self.community_sizes[comm] != actual_sizes[comm] {
-                    return false;
-                }
+            if comm < self.community_sizes.len() && self.community_sizes[comm] != actual_sizes[comm] {
+                return false;
             }
         }
 
@@ -368,6 +366,7 @@ impl CacheStatistics {
     }
 
     /// Returns the cache hit rate as a value between 0.0 and 1.0.
+    #[expect(clippy::cast_precision_loss, reason = "Counters are small relative to u64 precision; acceptable for cache statistics")]
     #[must_use]
     pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
@@ -515,7 +514,7 @@ fn compute_total_weight<G: GraphView>(graph: &G) -> f64 {
 /// # Arguments
 ///
 /// * `graph` — Input graph
-/// * `partition` — Current partition for delta_q evaluation
+/// * `partition` — Current partition for `delta_q` evaluation
 /// * `node` — The node to evaluate
 /// * `current_community` — The node's current community
 /// * `neighbor_communities` — Sorted list of (community ID, edge weight) pairs
@@ -523,6 +522,7 @@ fn compute_total_weight<G: GraphView>(graph: &G) -> f64 {
 /// * `gamma` — Resolution parameter
 /// * `total_weight_m` — Total edge weight of the graph
 /// * `state` — Cached community statistics
+#[expect(clippy::too_many_arguments, reason = "All parameters are required for quality gain evaluation during local moving")]
 fn find_best_community<G: GraphView>(
     graph: &G,
     partition: &Partition,
