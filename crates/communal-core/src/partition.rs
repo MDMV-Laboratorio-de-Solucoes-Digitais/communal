@@ -64,7 +64,7 @@ impl Partition {
     /// Counts unique community IDs in the membership vector.
     #[must_use]
     pub fn community_count(&self) -> usize {
-        let mut unique: Vec<u32> = self.membership.iter().copied().collect();
+        let mut unique: Vec<u32> = self.membership.clone();
         unique.sort_unstable();
         unique.dedup();
         unique.len()
