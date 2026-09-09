@@ -21,7 +21,11 @@ pub trait StreamingDetector<G: GraphView>: CommunityDetector<G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] if the mutation cannot be applied.
-    fn apply_mutation(&mut self, graph: &G, mutation: EdgeMutation) -> Result<Partition, GraphError>;
+    fn apply_mutation(
+        &mut self,
+        graph: &G,
+        mutation: EdgeMutation,
+    ) -> Result<Partition, GraphError>;
 
     /// Applies a batch of mutations sequentially.
     ///
