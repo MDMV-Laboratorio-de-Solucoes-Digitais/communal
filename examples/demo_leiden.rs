@@ -1,5 +1,12 @@
 //! Demo: Leiden algorithm on two triangles connected by a weak bridge.
 
+#![expect(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::uninlined_format_args,
+    reason = "Example code uses unwrap/expect for simplicity"
+)]
+
 use communal_algo::leiden::{Leiden, LeidenConfig};
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
