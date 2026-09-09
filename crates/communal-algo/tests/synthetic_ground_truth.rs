@@ -5,8 +5,8 @@
 //! with `#[ignore]` because they are slow and are intended to be run
 //! explicitly via `cargo test -- --ignored`.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::graph_view::GraphView;
@@ -78,10 +78,8 @@ fn compute_nmi(membership1: &[u32], membership2: &[u32]) -> f64 {
     }
 
     // Compute row and column marginals
-    let mut row_marginals: std::collections::HashMap<u32, usize> =
-        std::collections::HashMap::new();
-    let mut col_marginals: std::collections::HashMap<u32, usize> =
-        std::collections::HashMap::new();
+    let mut row_marginals: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+    let mut col_marginals: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
     for ((x, y), &count) in &contingency {
         *row_marginals.entry(*x).or_insert(0) += count;
         *col_marginals.entry(*y).or_insert(0) += count;
@@ -124,11 +122,7 @@ fn compute_nmi(membership1: &[u32], membership2: &[u32]) -> f64 {
     if denominator < 1e-15 {
         // Both partitions have zero entropy (all nodes in one community)
         // They are identical if they have the same single community
-        if membership1 == membership2 {
-            1.0
-        } else {
-            0.0
-        }
+        if membership1 == membership2 { 1.0 } else { 0.0 }
     } else {
         2.0 * mi / denominator
     }
@@ -158,7 +152,10 @@ fn run_leiden(graph: &CsrGraph, seed: u64) -> Result<Vec<u32>, String> {
 /// with different seeds to ensure robustness).
 #[test]
 #[ignore = "slow test; runs Leiden with multiple seeds to verify NMI >= 0.95"]
-#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
+#[expect(
+    clippy::panic,
+    reason = "Test assertions use panic for failure reporting"
+)]
 fn test_lfr_nmi_threshold() {
     let graph = create_synthetic_graph();
     let ground_truth = ground_truth_membership();
@@ -184,7 +181,10 @@ fn test_lfr_nmi_threshold() {
 /// This is a lighter-weight test that runs without `#[ignore]` to verify
 /// basic correctness of the algorithm on a simple graph.
 #[test]
-#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
+#[expect(
+    clippy::panic,
+    reason = "Test assertions use panic for failure reporting"
+)]
 fn test_synthetic_basic_validity() {
     let graph = create_synthetic_graph();
     let node_count = graph.node_count();
@@ -213,7 +213,10 @@ fn test_synthetic_basic_validity() {
 /// Verifies that the same seed produces the same result when run on the
 /// synthetic benchmark graph.
 #[test]
-#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
+#[expect(
+    clippy::panic,
+    reason = "Test assertions use panic for failure reporting"
+)]
 fn test_synthetic_determinism() {
     let graph = create_synthetic_graph();
     let seed = 42u64;
@@ -234,7 +237,10 @@ fn test_synthetic_determinism() {
 /// For a graph with two well-separated cliques, Leiden should find exactly
 /// 2 communities.
 #[test]
-#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
+#[expect(
+    clippy::panic,
+    reason = "Test assertions use panic for failure reporting"
+)]
 fn test_synthetic_community_count() {
     let graph = create_synthetic_graph();
 
