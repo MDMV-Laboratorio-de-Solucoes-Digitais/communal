@@ -13,6 +13,8 @@
 //! efficiently when the underlying graph changes, without recomputing
 //! from scratch.
 
+/// Error types for dynamic operations.
+pub mod error;
 /// Hierarchical community structure tracking across levels.
 pub mod hierarchy;
 /// Edge mutation types for dynamic graph changes.
@@ -21,5 +23,3 @@ pub mod mutation;
 pub mod streaming;
 /// Incremental update handler for local neighborhood changes.
 pub mod update;
-/// Error types for dynamic operations.
-pub mod error;
