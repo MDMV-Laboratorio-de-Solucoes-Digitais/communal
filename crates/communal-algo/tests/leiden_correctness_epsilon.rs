@@ -8,8 +8,8 @@
 //! graph and recording the resulting Q. This ensures that the optimized
 //! implementation produces consistent results.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::error::GraphError;
@@ -110,12 +110,7 @@ fn test_no_edges() -> Result<(), String> {
 /// Edges form a linear chain: 0 — 1 — 2 — 3 — 4.
 #[test]
 fn test_path_p5() -> Result<(), String> {
-    let edges = vec![
-        (0, 1, 1.0),
-        (1, 2, 1.0),
-        (2, 3, 1.0),
-        (3, 4, 1.0),
-    ];
+    let edges = vec![(0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0)];
     let graph = CsrGraph::from_edges(&edges, 5);
     let quality = run_leiden_quality(&graph).map_err(|e| format!("{e}"))?;
     // Reference: partition into two communities, Q = 0.2500
