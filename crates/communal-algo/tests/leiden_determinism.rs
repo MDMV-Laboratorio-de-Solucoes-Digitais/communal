@@ -62,7 +62,7 @@ fn run_leiden_default(graph: &CsrGraph) -> Result<Vec<u32>, String> {
 
 /// Validates that a partition is well-formed:
 /// - Membership vector length matches node count
-/// - All entries are valid community IDs (any u32 is valid)
+/// - All entries are valid community IDs (any `u32` is valid)
 fn is_valid_partition(membership: &[u32], node_count: usize) -> bool {
     membership.len() == node_count
 }
@@ -70,21 +70,22 @@ fn is_valid_partition(membership: &[u32], node_count: usize) -> bool {
 /// Test that running Leiden 10 times with the same seed produces identical
 /// membership vectors.
 #[test]
-fn test_same_seed_same_result() {
+fn test_same_seed_same_result() -> Result<(), String> {
     let graph = create_test_graph();
     let seed = 42u64;
     let iterations = 10;
 
-    let first_result = run_leiden_with_seed(&graph, seed).expect("first run should succeed");
+    let first_result = run_leiden_with_seed(&graph, seed)?;
 
     for i in 1..iterations {
-        let result = run_leiden_with_seed(&graph, seed)
-            .unwrap_or_else(|e| panic!("run {i} with seed {seed} should succeed: {e}"));
+        let result = run_leiden_with_seed(&graph, seed)?;
         assert_eq!(
             first_result, result,
             "membership vectors differ between run 0 and run {i} with seed {seed}"
         );
     }
+
+    Ok(())
 }
 
 /// Test that running Leiden with different seeds may produce different results
@@ -94,7 +95,7 @@ fn test_same_seed_same_result() {
 /// same result by coincidence. This test verifies that at least one different
 /// seed produces a different result, and that all results are valid partitions.
 #[test]
-fn test_different_seeds_may_differ() {
+fn test_different_seeds_may_differ() -> Result<(), String> {
     let graph = create_test_graph();
     let seeds = [42u64, 123u64, 456u64, 789u64, 1000u64];
     let node_count = graph.node_count();
@@ -104,18 +105,16 @@ fn test_different_seeds_may_differ() {
         .enumerate()
         .map(|(i, &seed)| {
             run_leiden_with_seed(&graph, seed)
-                .unwrap_or_else(|e| panic!("run with seed {seed} (index {i}) should succeed: {e}"))
+                .map_err(|e| format!("run with seed {seed} (index {i}) should succeed: {e}"))
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     // All results must be valid partitions
     for (i, result) in results.iter().enumerate() {
+        let seed = seeds[i];
         assert!(
             is_valid_partition(result, node_count),
-            "result for seed {} (index {}) is not a valid partition: {:?}",
-            seeds[i],
-            i,
-            result
+            "result for seed {seed} (index {i}) is not a valid partition: {result:?}",
         );
     }
 
@@ -129,9 +128,10 @@ fn test_different_seeds_may_differ() {
     assert!(
         any_different,
         "expected at least one different seed to produce a different result, \
-         but all seeds produced the same membership vector: {:?}",
-        first
+         but all seeds produced the same membership vector: {first:?}",
     );
+
+    Ok(())
 }
 
 /// Test that the default seed (42) is used when no seed is specified.
@@ -139,17 +139,18 @@ fn test_different_seeds_may_differ() {
 /// This verifies that running with `LeidenConfig::default()` (which has
 /// `seed: None`) produces the same result as running with `seed: Some(42)`.
 #[test]
-fn test_default_seed() {
+fn test_default_seed() -> Result<(), String> {
     let graph = create_test_graph();
 
-    let default_result = run_leiden_default(&graph).expect("default seed run should succeed");
-    let explicit_result =
-        run_leiden_with_seed(&graph, 42).expect("explicit seed 42 run should succeed");
+    let default_result = run_leiden_default(&graph)?;
+    let explicit_result = run_leiden_with_seed(&graph, 42)?;
 
     assert_eq!(
         default_result, explicit_result,
         "default config (seed=None) should produce the same result as seed=42"
     );
+
+    Ok(())
 }
 
 /// Test determinism across 100 iterations with the same seed.
@@ -158,19 +159,20 @@ fn test_default_seed() {
 /// runs 100 iterations to catch any non-determinism that might only
 /// manifest after many runs.
 #[test]
-fn test_same_seed_same_result_100_iterations() {
+fn test_same_seed_same_result_100_iterations() -> Result<(), String> {
     let graph = create_test_graph();
     let seed = 99u64;
     let iterations = 100;
 
-    let first_result = run_leiden_with_seed(&graph, seed).expect("first run should succeed");
+    let first_result = run_leiden_with_seed(&graph, seed)?;
 
     for i in 1..iterations {
-        let result = run_leiden_with_seed(&graph, seed)
-            .unwrap_or_else(|e| panic!("run {i} with seed {seed} should succeed: {e}"));
+        let result = run_leiden_with_seed(&graph, seed)?;
         assert_eq!(
             first_result, result,
             "membership vectors differ between run 0 and run {i} with seed {seed} over {iterations} iterations"
         );
     }
+
+    Ok(())
 }
