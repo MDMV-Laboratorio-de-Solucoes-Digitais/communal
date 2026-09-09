@@ -733,4 +733,84 @@ mod tests {
             0
         );
     }
+
+    /// Verifies that `compute_all` produces deterministic (bitwise-identical)
+    /// results across repeated calls, confirming that ascending `NodeId`
+    /// accumulation order yields reproducible cached community statistics (FR-011).
+    #[test]
+    fn test_compute_all_deterministic_accumulation() {
+        // Triangle (nodes 0, 1, 2) with a tail (node 3 attached to node 2).
+        // All edges have weight 1.0. Edge list uses 0-based node indices.
+        let edges = vec![(0u32, 1u32, 1.0_f64), (1, 2, 1.0), (0, 2, 1.0), (2, 3, 1.0)];
+        let graph = communal_core::csr::CsrGraph::from_edges(&edges, 4);
+
+        // Nodes 0, 1, 2 in community 1; node 3 in community 2.
+        let membership = vec![1u32, 1, 1, 2];
+
+        let state_a = LocalMoveState::compute_all(&graph, &membership);
+        let state_b = LocalMoveState::compute_all(&graph, &membership);
+
+        // Bitwise-identical community_degree_sums across calls.
+        assert_eq!(
+            state_a
+                .community_degree_sums
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<u64>>(),
+            state_b
+                .community_degree_sums
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<u64>>(),
+        );
+
+        // Bitwise-identical community_sizes across calls.
+        assert_eq!(state_a.community_sizes, state_b.community_sizes);
+
+        // Bitwise-identical community_internal_weights across calls.
+        assert_eq!(
+            state_a
+                .community_internal_weights
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<u64>>(),
+            state_b
+                .community_internal_weights
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<u64>>(),
+        );
+
+        // Verify correctness of community statistics.
+        // Community 1: nodes 0,1,2 with degrees 2.0, 2.0, 3.0 → sum = 7.0, size = 3.
+        // Community 2: node 3 with degree 1.0 → sum = 1.0, size = 1.
+        assert!(
+            (state_a.community_degree_sums[1] - 7.0).abs() < f64::EPSILON,
+            "community 1 degree sum should be 7.0, got {}",
+            state_a.community_degree_sums[1]
+        );
+        assert_eq!(state_a.community_sizes[1], 3);
+        assert!(
+            (state_a.community_degree_sums[2] - 1.0).abs() < f64::EPSILON,
+            "community 2 degree sum should be 1.0, got {}",
+            state_a.community_degree_sums[2]
+        );
+        assert_eq!(state_a.community_sizes[2], 1);
+
+        // Internal weights: community 1 has edges (0,1), (0,2), (1,2) = 3.0.
+        // Community 2 has no internal edges = 0.0.
+        assert!(
+            (state_a.community_internal_weights[1] - 3.0).abs() < f64::EPSILON,
+            "community 1 internal weight should be 3.0, got {}",
+            state_a.community_internal_weights[1]
+        );
+        assert!(
+            (state_a.community_internal_weights[2] - 0.0).abs() < f64::EPSILON,
+            "community 2 internal weight should be 0.0, got {}",
+            state_a.community_internal_weights[2]
+        );
+
+        // Total weight: 4 undirected edges counted once each = 4.0.
+        assert_eq!(state_a.total_weight_m.to_bits(), 4.0_f64.to_bits());
+    }
 }
