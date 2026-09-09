@@ -30,7 +30,10 @@ impl NeighborCache {
     /// Creates a new clean neighbor cache with the given weights.
     #[must_use]
     pub fn new(weights: FxHashMap<u32, f64>) -> Self {
-        Self { weights, dirty: false }
+        Self {
+            weights,
+            dirty: false,
+        }
     }
 
     /// Creates a new dirty (empty) neighbor cache that will be rebuilt on first access.
@@ -102,6 +105,13 @@ pub struct LocalMoveState {
     pub neighbor_caches: Vec<NeighborCache>,
     /// Number of incremental updates since last full recompute.
     pub incremental_updates: u32,
+    /// Debug-only cache statistics for performance monitoring.
+    ///
+    /// Tracks cache hit/miss rates, invalidation counts, and recompute triggers.
+    /// Only populated in debug builds (`#[cfg(debug_assertions)]`) for zero cost
+    /// in release builds.
+    #[cfg(debug_assertions)]
+    pub cache_statistics: CacheStatistics,
 }
 
 impl LocalMoveState {
@@ -172,8 +182,9 @@ impl LocalMoveState {
         }
 
         // Initialize neighbor caches (all start dirty).
-        let neighbor_caches: Vec<NeighborCache> =
-            (0..node_count).map(|_| NeighborCache::new_dirty()).collect();
+        let neighbor_caches: Vec<NeighborCache> = (0..node_count)
+            .map(|_| NeighborCache::new_dirty())
+            .collect();
 
         Self {
             node_degrees,
@@ -184,6 +195,8 @@ impl LocalMoveState {
             community_dirty: vec![false; max_community + 1],
             neighbor_caches,
             incremental_updates: 0,
+            #[cfg(debug_assertions)]
+            cache_statistics: CacheStatistics::default(),
         }
     }
 
@@ -191,7 +204,18 @@ impl LocalMoveState {
     pub fn recompute_dirty<G: GraphView>(&mut self, graph: &G, membership: &[u32]) {
         // For now, fall back to full recompute for simplicity.
         // In production, this would only recompute dirty communities.
-        *self = Self::compute_all(graph, membership);
+        let mut new_state = Self::compute_all(graph, membership);
+        // Preserve cumulative statistics across full recompute.
+        #[cfg(debug_assertions)]
+        {
+            std::mem::swap(&mut new_state.cache_statistics, &mut self.cache_statistics);
+        }
+        *self = new_state;
+        #[cfg(debug_assertions)]
+        {
+            self.cache_statistics.full_recomputes += 1;
+            self.cache_statistics.incremental_updates = 0;
+        }
     }
 
     /// Ensures community vectors are large enough for the given community ID.
@@ -206,28 +230,68 @@ impl LocalMoveState {
     }
 
     /// Applies subtract-add repair when a node moves from one community to another.
-    pub fn apply_move(&mut self, node_idx: usize, from: u32, to: u32) {
+    ///
+    /// Updates community degree sums, sizes, and internal edge weights
+    /// incrementally. Both the source and target communities are marked dirty.
+    ///
+    /// # Arguments
+    ///
+    /// * `graph` — Input graph (used to compute intra-community edge weights)
+    /// * `node_idx` — 0-based index of the node being moved
+    /// * `from` — Source community ID
+    /// * `to` — Target community ID
+    /// * `membership` — Current community membership (node still in `from`)
+    pub fn apply_move<G: GraphView>(
+        &mut self,
+        graph: &G,
+        node_idx: usize,
+        from: u32,
+        to: u32,
+        membership: &[u32],
+    ) {
         let node_degree = self.node_degrees[node_idx + 1];
-        let from = from as usize;
-        let to = to as usize;
+        let from_idx = from as usize;
+        let to_idx = to as usize;
 
         // Ensure capacity for target community.
-        self.ensure_capacity(to.max(from));
+        self.ensure_capacity(to_idx.max(from_idx));
 
         // Subtract from source community.
-        self.community_degree_sums[from] -= node_degree;
-        self.community_sizes[from] -= 1;
+        self.community_degree_sums[from_idx] -= node_degree;
+        self.community_sizes[from_idx] -= 1;
 
         // Add to target community.
-        self.community_degree_sums[to] += node_degree;
-        self.community_sizes[to] += 1;
+        self.community_degree_sums[to_idx] += node_degree;
+        self.community_sizes[to_idx] += 1;
+
+        // Update internal weights (subtract-add repair).
+        // The node's edges to the source community are no longer intra-community,
+        // and its edges to the target community become intra-community.
+        let (weight_from, weight_to) =
+            if let Some(node) = NodeId::new(u32::try_from(node_idx + 1).unwrap_or(0)) {
+                let neighbor_cache = self.get_neighbor_cache(graph, node, membership);
+                (
+                    neighbor_cache.get(&from).copied().unwrap_or(0.0),
+                    neighbor_cache.get(&to).copied().unwrap_or(0.0),
+                )
+            } else {
+                (0.0, 0.0)
+            };
+        self.community_internal_weights[from_idx] -= weight_from;
+        self.community_internal_weights[to_idx] += weight_to;
 
         // Mark both communities as dirty.
-        self.community_dirty[from] = true;
-        self.community_dirty[to] = true;
+        self.community_dirty[from_idx] = true;
+        self.community_dirty[to_idx] = true;
 
         // Increment update counter.
         self.incremental_updates += 1;
+
+        // Increment debug-only incremental update counter.
+        #[cfg(debug_assertions)]
+        {
+            self.cache_statistics.incremental_updates += 1;
+        }
     }
 
     /// Propagates invalidation to neighbor caches (frontier propagation).
@@ -236,6 +300,10 @@ impl LocalMoveState {
             let neighbor_idx = neighbor.index() - 1;
             if neighbor_idx < self.neighbor_caches.len() {
                 self.neighbor_caches[neighbor_idx].mark_dirty();
+                #[cfg(debug_assertions)]
+                {
+                    self.cache_statistics.invalidations += 1;
+                }
             }
         }
     }
@@ -251,6 +319,10 @@ impl LocalMoveState {
     ) -> &FxHashMap<u32, f64> {
         let node_idx = node.index() - 1;
         if self.neighbor_caches[node_idx].is_dirty() {
+            #[cfg(debug_assertions)]
+            {
+                self.cache_statistics.misses += 1;
+            }
             let weights = self.neighbor_caches[node_idx].rebuild();
             for neighbor in graph.neighbors(node) {
                 let neighbor_idx = neighbor.index().saturating_sub(1);
@@ -263,6 +335,11 @@ impl LocalMoveState {
                         *weights.entry(neighbor_community).or_insert(0.0) += weight;
                     }
                 }
+            }
+        } else {
+            #[cfg(debug_assertions)]
+            {
+                self.cache_statistics.hits += 1;
             }
         }
         // After rebuilding (or if already clean), the cache is guaranteed non-dirty.
@@ -315,7 +392,8 @@ impl LocalMoveState {
             {
                 return false;
             }
-            if comm < self.community_sizes.len() && self.community_sizes[comm] != actual_sizes[comm] {
+            if comm < self.community_sizes.len() && self.community_sizes[comm] != actual_sizes[comm]
+            {
                 return false;
             }
         }
@@ -366,7 +444,10 @@ impl CacheStatistics {
     }
 
     /// Returns the cache hit rate as a value between 0.0 and 1.0.
-    #[expect(clippy::cast_precision_loss, reason = "Counters are small relative to u64 precision; acceptable for cache statistics")]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "Counters are small relative to u64 precision; acceptable for cache statistics"
+    )]
     #[must_use]
     pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
@@ -456,7 +537,13 @@ pub fn local_moving<G: GraphView>(
             && would_remain_connected(graph, membership, node, current_community)
         {
             // Apply the move using cached state (subtract-add repair).
-            state.apply_move(node_idx, current_community, target_community);
+            state.apply_move(
+                graph,
+                node_idx,
+                current_community,
+                target_community,
+                membership,
+            );
             state.invalidate_neighbors(graph, node);
             // Invalidate the moved node's own neighbor cache (FR-002).
             if node_idx < state.neighbor_caches.len() {
@@ -522,7 +609,10 @@ fn compute_total_weight<G: GraphView>(graph: &G) -> f64 {
 /// * `gamma` — Resolution parameter
 /// * `total_weight_m` — Total edge weight of the graph
 /// * `state` — Cached community statistics
-#[expect(clippy::too_many_arguments, reason = "All parameters are required for quality gain evaluation during local moving")]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "All parameters are required for quality gain evaluation during local moving"
+)]
 fn find_best_community<G: GraphView>(
     graph: &G,
     partition: &Partition,
@@ -605,7 +695,8 @@ pub(crate) fn would_remain_connected<G: GraphView>(
 
     while let Some(current) = stack.pop() {
         if visited.insert(current)
-            && let Some(current_node) = NodeId::new(u32::try_from(current).unwrap_or(u32::MAX).wrapping_add(1))
+            && let Some(current_node) =
+                NodeId::new(u32::try_from(current).unwrap_or(u32::MAX).wrapping_add(1))
         {
             for neighbor in graph.neighbors(current_node) {
                 let neighbor_idx = neighbor.index() - 1;
@@ -631,7 +722,14 @@ mod tests {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let mut state = LocalMoveState::compute_all(&graph, &membership);
         assert_eq!(
-            local_moving(&graph, &mut membership, QualityFunction::Modularity, 1.0, &mut rng, &mut state),
+            local_moving(
+                &graph,
+                &mut membership,
+                QualityFunction::Modularity,
+                1.0,
+                &mut rng,
+                &mut state
+            ),
             0
         );
     }
