@@ -10,8 +10,8 @@
 //! Note: All tests are combined into a single function because dhat only allows
 //! one profiler at a time.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use communal_core::graph_view::GraphView;
@@ -78,7 +78,10 @@ fn profile_memory(graph: &CsrGraph) -> Result<usize, String> {
 
 /// Test memory bound and scaling in a single function (dhat limitation).
 #[test]
-#[expect(clippy::panic, reason = "Test assertions use panic for failure reporting")]
+#[expect(
+    clippy::panic,
+    reason = "Test assertions use panic for failure reporting"
+)]
 fn test_memory_bound_and_scaling() {
     // Test memory bound on graphs of increasing size.
     let sizes: Vec<usize> = vec![100, 500, 1000];
