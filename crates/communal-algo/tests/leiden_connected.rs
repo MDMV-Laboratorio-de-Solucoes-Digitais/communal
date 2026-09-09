@@ -6,8 +6,8 @@
 //! 2. **Quality Monotonicity**: Quality never decreases between the initial
 //!    singleton partition and the final partition.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::quality::Modularity;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
@@ -86,27 +86,25 @@ fn is_connected(graph: &CsrGraph, nodes: &[u32]) -> bool {
 fn graph_strategy() -> impl Strategy<Value = (Vec<(u32, u32, f64)>, u32)> {
     (2u32..=6u32).prop_flat_map(|num_cliques| {
         // Generate clique sizes (each 3–8 nodes).
-        prop::collection::vec(3u32..=8u32, num_cliques as usize).prop_map(
-            move |clique_sizes| {
-                let node_count: u32 = clique_sizes.iter().sum();
-                let mut edges: Vec<(u32, u32, f64)> = Vec::new();
+        prop::collection::vec(3u32..=8u32, num_cliques as usize).prop_map(move |clique_sizes| {
+            let node_count: u32 = clique_sizes.iter().sum();
+            let mut edges: Vec<(u32, u32, f64)> = Vec::new();
 
-                // Build intra-clique edges (complete subgraphs).
-                let mut offset = 0u32;
-                for &size in &clique_sizes {
-                    for i in offset..offset + size {
-                        for j in (i + 1)..offset + size {
-                            // Deterministic weight based on node indices.
-                            let weight = 0.5 + f64::from((i.wrapping_add(j)) % 50) / 100.0;
-                            edges.push((i, j, weight));
-                        }
+            // Build intra-clique edges (complete subgraphs).
+            let mut offset = 0u32;
+            for &size in &clique_sizes {
+                for i in offset..offset + size {
+                    for j in (i + 1)..offset + size {
+                        // Deterministic weight based on node indices.
+                        let weight = 0.5 + f64::from((i.wrapping_add(j)) % 50) / 100.0;
+                        edges.push((i, j, weight));
                     }
-                    offset += size;
                 }
+                offset += size;
+            }
 
-                (edges, node_count)
-            },
-        )
+            (edges, node_count)
+        })
     })
 }
 
