@@ -20,12 +20,13 @@ use communal_core::id::NodeId;
 use communal_core::partition::Partition;
 use communal_core::quality::QualityMetric;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
+use rand_chacha::ChaCha8Rng;
 use tracing::{info, warn};
 
 use crate::leiden::aggregation::aggregation;
-use crate::leiden::convergence::{has_converged, plateau_threshold};
-use crate::leiden::local_moving::local_moving;
+use crate::leiden::convergence::ConvergenceState;
+use crate::leiden::local_moving::{local_moving, LocalMoveState};
+use crate::leiden::refinement::refinement;
 use crate::quality::{Cpm, Modularity, QualityFunction};
 
 /// Callback trait for forward-only algorithm stepping control.
@@ -118,7 +119,7 @@ impl Leiden {
     fn compute_quality<G: GraphView>(&self, graph: &G, membership: &[u32]) -> Result<f64, GraphError> {
         let mut one_indexed = vec![0_u32; 1];
         one_indexed.extend_from_slice(membership);
-        let partition = Partition::new(one_indexed, 0.0);
+        let partition = Partition::new(one_indexed, 0.0, false);
 
         match self.quality_function {
             QualityFunction::Modularity => {
@@ -147,14 +148,15 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
 
         // Handle empty graph (0 nodes).
         if graph.node_count() == 0 {
-            return Ok(Partition::new(Vec::new(), 0.0));
+            return Ok(Partition::new(Vec::new(), 0.0, true));
         }
 
         // Handle graph with no edges: each node in its own community.
         let total_weight = Self::compute_total_weight(graph);
         if total_weight <= 0.0 {
-            let membership: Vec<u32> = (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
-            return Ok(Partition::new(membership, 0.0));
+            let membership: Vec<u32> =
+                (0..u32::try_from(graph.node_count()).unwrap_or(u32::MAX)).collect();
+            return Ok(Partition::new(membership, 0.0, true));
         }
 
         // Initialize membership: each node in its own community (singletons).
@@ -164,42 +166,39 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         let max_id = u32::try_from(node_count).unwrap_or(u32::MAX);
         let mut membership: Vec<u32> = (0..max_id).collect();
 
-        let mut rng = StdRng::seed_from_u64(self.config.seed.unwrap_or(42));
-        let mut previous_quality = 0.0_f64;
-        let mut best_membership = membership.clone();
-        let mut best_quality = 0.0_f64;
+        // Initialize seeded RNG (ChaCha8Rng for reproducibility).
+        let mut rng = ChaCha8Rng::seed_from_u64(self.config.seed.unwrap_or(42));
+
+        // Initialize cached state and convergence tracker.
+        let mut state = LocalMoveState::compute_all(graph, &membership);
+        let mut conv_state = ConvergenceState::new();
         let mut converged = false;
 
         for iteration in 0..self.config.max_iterations {
-            // Local moving phase.
+            // 1. Local moving phase (uses cached state).
             info!(iteration, phase = "local_moving", "local moving phase started");
-            let improved = local_moving(graph, &mut membership, self.quality_function, self.config.gamma, &mut rng);
+            let nodes_moved = local_moving(
+                graph,
+                &mut membership,
+                self.quality_function,
+                self.config.gamma,
+                &mut rng,
+                &mut state,
+            );
 
-            // Compute current quality.
-            let current_quality = self.compute_quality(graph, &membership)?;
-            let improvement = (current_quality - previous_quality).abs();
+            // 2. Refinement phase (splits communities, uses cached state).
+            info!(iteration, phase = "refinement", "refinement phase started");
+            refinement(
+                graph,
+                &mut membership,
+                self.quality_function,
+                self.config.gamma,
+                self.config.beta,
+                &mut rng,
+                &mut state,
+            );
 
-            // Check convergence.
-            if has_converged(
-                current_quality,
-                previous_quality,
-                self.config.convergence_threshold,
-                self.config.convergence_mode,
-            ) {
-                info!(iteration, final_quality = current_quality, "convergence detected");
-                best_membership.clone_from(&membership);
-                best_quality = current_quality;
-                converged = true;
-                break;
-            }
-
-            // Plateau detection (does not terminate the algorithm).
-            let plateau = plateau_threshold(self.config.convergence_threshold);
-            if improvement < plateau {
-                info!(iteration, improvement, current_quality, "convergence plateau detected");
-            }
-
-            // Aggregation for tracing.
+            // 3. Aggregation phase (build reduced graph for observability).
             let aggregation_result = aggregation(graph, &membership);
             let num_communities = aggregation_result.community_to_nodes.len();
             info!(
@@ -210,21 +209,50 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
                 "aggregation contraction"
             );
 
-            // Track best partition.
-            if current_quality > best_quality {
-                best_quality = current_quality;
-                best_membership.clone_from(&membership);
+            // 4. Quality evaluation after complete Leiden pass.
+            let current_quality = self.compute_quality(graph, &membership)?;
+
+            // 5. Convergence check (FR-003: quality threshold OR zero-movement OR plateau).
+            let _events = conv_state.update(
+                current_quality,
+                self.config.convergence_threshold,
+                self.config.convergence_mode,
+                nodes_moved,
+            );
+
+            // 6. Best partition tracking (FR-012).
+            conv_state.update_best(&membership, current_quality);
+
+            if conv_state.has_converged() {
+                info!(iteration, final_quality = current_quality, "convergence detected");
+                converged = true;
+                break;
             }
 
-            previous_quality = current_quality;
-
-            // If local moving didn't improve, we're done.
-            if !improved {
+            // If no nodes moved in local moving, the algorithm has stabilized.
+            if nodes_moved == 0 {
+                info!(iteration, "no nodes moved — algorithm stabilized");
                 break;
+            }
+
+            // 7. Cache maintenance (FR-011): defer periodic full recompute to
+            // the next phase boundary (after aggregation), not mid-pass.
+            if state.needs_full_recompute(self.config.recompute_interval) {
+                state.recompute_dirty(graph, &membership);
+                state.reset_update_counter();
             }
         }
 
-        // Handle max iterations without convergence.
+        // Debug-build cache consistency check (FR-001).
+        #[cfg(debug_assertions)]
+        {
+            debug_assert!(
+                state.verify_consistency(graph, &membership),
+                "main loop: cache inconsistency detected"
+            );
+        }
+
+        // Handle max iterations without convergence (FR-012).
         if !converged {
             warn!(
                 iterations = ?self.config.max_iterations,
@@ -232,6 +260,7 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
             );
         }
 
-        Ok(Partition::new(best_membership, best_quality))
+        // Return best partition found across all iterations.
+        Ok(Partition::new(conv_state.best_membership, conv_state.best_quality, converged))
     }
 }
