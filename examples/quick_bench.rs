@@ -1,5 +1,15 @@
 //! Quick benchmark for a single LFR graph.
 
+#![expect(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::cast_precision_loss,
+    clippy::map_unwrap_or,
+    clippy::redundant_closure,
+    clippy::uninlined_format_args,
+    reason = "Example code uses unwrap/expect for simplicity"
+)]
+
 use communal_algo::leiden::{Leiden, LeidenConfig};
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
@@ -30,7 +40,7 @@ fn compute_nmi(p1: &[u32], p2: &[u32]) -> f64 {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let name = args.get(1).map(|s| s.as_str()).unwrap_or("LFR_N1000_mu0.1");
+    let name = args.get(1).map_or("LFR_N1000_mu0.1", String::as_str);
     
     let edge_file = format!("benchmarks/lfr_graphs/{}.edges", name);
     let gt_file = format!("benchmarks/lfr_graphs/{}.ground_truth", name);
