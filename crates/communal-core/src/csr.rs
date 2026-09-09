@@ -1,4 +1,4 @@
-use crate::graph_view::{private::Sealed, GraphView, MultilayerView};
+use crate::graph_view::{GraphView, MultilayerView, private::Sealed};
 use crate::id::NodeId;
 
 /// Compressed Sparse Row (CSR) graph representation.
