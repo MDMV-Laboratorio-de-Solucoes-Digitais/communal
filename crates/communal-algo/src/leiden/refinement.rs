@@ -73,7 +73,7 @@ pub fn refinement<G: GraphView>(
                 current_community,
                 quality_function,
                 gamma,
-                _beta: beta,
+                beta,
                 total_weight_m,
                 state,
                 rng,
@@ -126,7 +126,7 @@ struct SelectionParams<'a, G: GraphView> {
     current_community: u32,
     quality_function: QualityFunction,
     gamma: f64,
-    _beta: f64,
+    beta: f64,
     total_weight_m: f64,
     state: &'a mut LocalMoveState,
     rng: &'a mut ChaCha8Rng,
@@ -185,7 +185,7 @@ fn select_target_community<G: GraphView>(
         // When beta = 0 (greedy): only positive gains are accepted.
         // When beta = 1 (random): all gains are accepted uniformly.
         // Intermediate values interpolate linearly.
-        let acceptance_prob = if gain > 0.0 { 1.0 } else { params._beta };
+        let acceptance_prob = if gain > 0.0 { 1.0 } else { params.beta };
 
         if params.rng.random::<f64>() < acceptance_prob {
             candidates.push((community, gain));
