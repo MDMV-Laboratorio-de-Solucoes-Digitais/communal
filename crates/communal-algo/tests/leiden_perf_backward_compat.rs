@@ -90,10 +90,10 @@ fn generate_ring_with_chords(node_count: usize, target_edges: usize) -> CsrGraph
             // At exactly half the ring length (even n), each undirected
             // edge appears twice — once from each endpoint.  Emit only
             // the `i < j` orientation to avoid duplicates.
-            if distance == max_distance && node_count % 2 == 0 && i >= j {
+            if distance == max_distance && node_count.is_multiple_of(2) && i >= j {
                 continue;
             }
-            edges.push((i as u32, j as u32, 1.0));
+            edges.push((u32::try_from(i).unwrap_or(0), u32::try_from(j).unwrap_or(0), 1.0));
         }
     }
 
@@ -111,7 +111,7 @@ fn generate_karate_like() -> CsrGraph {
 
 /// Generates a PolBooks-like graph: 105 nodes, approximately 441 edges.
 ///
-/// The PolBooks network (105 nodes, 441 undirected edges) represents
+/// The `PolBooks` network (105 nodes, 441 undirected edges) represents
 /// political book co-purchases.  This synthetic version matches the
 /// node and edge counts.
 fn generate_polbooks_like() -> CsrGraph {
@@ -120,7 +120,7 @@ fn generate_polbooks_like() -> CsrGraph {
 
 /// Generates a NetScience-like graph: 1 589 nodes, approximately 2 742 edges.
 ///
-/// The NetScience co-authorship network (1 589 nodes, 2 742 undirected
+/// The `NetScience` co-authorship network (1 589 nodes, 2 742 undirected
 /// edges) is a sparse collaboration graph.  This synthetic version
 /// matches the node and edge counts.
 fn generate_netscience_like() -> CsrGraph {
@@ -129,7 +129,7 @@ fn generate_netscience_like() -> CsrGraph {
 
 /// Generates a PolBlogs-like graph: 1 490 nodes, approximately 19 090 edges.
 ///
-/// The PolBlogs network (1 490 nodes, 19 090 undirected edges) is a
+/// The `PolBlogs` network (1 490 nodes, 19 090 undirected edges) is a
 /// denser political-blog link graph.  This synthetic version matches
 /// the node and edge counts.
 fn generate_polblogs_like() -> CsrGraph {
