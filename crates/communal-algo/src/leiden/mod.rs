@@ -9,9 +9,12 @@ pub mod config;
 pub mod convergence;
 pub mod local_moving;
 pub mod refinement;
+pub mod stepping;
 
 // Re-export LeidenConfig for external use (e.g., WASM crate).
 pub use config::LeidenConfig;
+// Re-export SteppingCallback from the stepping module (canonical location).
+pub use crate::leiden::stepping::SteppingCallback;
 
 use communal_core::detector::CommunityDetector;
 use communal_core::error::GraphError;
@@ -25,42 +28,9 @@ use tracing::{info, warn};
 
 use crate::leiden::aggregation::aggregation;
 use crate::leiden::convergence::ConvergenceState;
-use crate::leiden::local_moving::{local_moving, LocalMoveState};
+use crate::leiden::local_moving::{LocalMoveState, local_moving};
 use crate::leiden::refinement::refinement;
 use crate::quality::{Cpm, Modularity, QualityFunction};
-
-/// Callback trait for forward-only algorithm stepping control.
-///
-/// Implementors can pause execution before each iteration and decide
-/// whether to continue or abort. When `None`, the algorithm runs
-/// unhindered at full speed (zero-cost when disabled).
-///
-/// The trait is `Send` (not `Send + Sync`) to allow mutable state
-/// in callbacks during single-threaded dispatch.
-pub trait SteppingCallback: Send {
-    /// Called before each iteration.
-    ///
-    /// # Arguments
-    ///
-    /// * `iteration` — Current iteration number (0-indexed).
-    /// * `phase` — Current algorithm phase.
-    ///
-    /// # Returns
-    ///
-    /// `true` to continue execution, `false` to abort.
-    fn before_iteration(&mut self, iteration: usize, phase: AlgorithmPhase) -> bool;
-}
-
-/// Algorithm phases for stepping control.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AlgorithmPhase {
-    /// Smart local moving phase.
-    LocalMoving,
-    /// Randomized refinement phase.
-    Refinement,
-    /// Graph aggregation phase.
-    Aggregation,
-}
 
 /// Leiden algorithm implementation.
 ///
@@ -116,7 +86,11 @@ impl Leiden {
     ///
     /// Creates a 1-indexed partition from the 0-indexed membership vector
     /// and evaluates it using the configured quality function.
-    fn compute_quality<G: GraphView>(&self, graph: &G, membership: &[u32]) -> Result<f64, GraphError> {
+    fn compute_quality<G: GraphView>(
+        &self,
+        graph: &G,
+        membership: &[u32],
+    ) -> Result<f64, GraphError> {
         let mut one_indexed = vec![0_u32; 1];
         one_indexed.extend_from_slice(membership);
         let partition = Partition::new(one_indexed, 0.0, false);
@@ -124,15 +98,17 @@ impl Leiden {
         match self.quality_function {
             QualityFunction::Modularity => {
                 let m = Modularity::new(self.config.gamma);
-                m.evaluate(graph, &partition).map_err(|e| GraphError::InvalidGraph {
-                    reason: format!("quality computation failed: {e}"),
-                })
+                m.evaluate(graph, &partition)
+                    .map_err(|e| GraphError::InvalidGraph {
+                        reason: format!("quality computation failed: {e}"),
+                    })
             }
             QualityFunction::Cpm => {
                 let cpm = Cpm::new(self.config.gamma);
-                cpm.evaluate(graph, &partition).map_err(|e| GraphError::InvalidGraph {
-                    reason: format!("quality computation failed: {e}"),
-                })
+                cpm.evaluate(graph, &partition)
+                    .map_err(|e| GraphError::InvalidGraph {
+                        reason: format!("quality computation failed: {e}"),
+                    })
             }
             QualityFunction::MapEquation => Ok(0.0),
         }
@@ -142,9 +118,11 @@ impl Leiden {
 impl<G: GraphView> CommunityDetector<G> for Leiden {
     fn detect(&self, graph: &G) -> Result<Partition, GraphError> {
         // Validate configuration parameters.
-        self.config.validate().map_err(|e| GraphError::InvalidGraph {
-            reason: e.to_string(),
-        })?;
+        self.config
+            .validate()
+            .map_err(|e| GraphError::InvalidGraph {
+                reason: e.to_string(),
+            })?;
 
         // Handle empty graph (0 nodes).
         if graph.node_count() == 0 {
@@ -176,7 +154,11 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
 
         for iteration in 0..self.config.max_iterations {
             // 1. Local moving phase (uses cached state).
-            info!(iteration, phase = "local_moving", "local moving phase started");
+            info!(
+                iteration,
+                phase = "local_moving",
+                "local moving phase started"
+            );
             let nodes_moved = local_moving(
                 graph,
                 &mut membership,
@@ -224,7 +206,11 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
             conv_state.update_best(&membership, current_quality);
 
             if conv_state.has_converged() {
-                info!(iteration, final_quality = current_quality, "convergence detected");
+                info!(
+                    iteration,
+                    final_quality = current_quality,
+                    "convergence detected"
+                );
                 converged = true;
                 break;
             }
@@ -261,6 +247,10 @@ impl<G: GraphView> CommunityDetector<G> for Leiden {
         }
 
         // Return best partition found across all iterations.
-        Ok(Partition::new(conv_state.best_membership, conv_state.best_quality, converged))
+        Ok(Partition::new(
+            conv_state.best_membership,
+            conv_state.best_quality,
+            converged,
+        ))
     }
 }
