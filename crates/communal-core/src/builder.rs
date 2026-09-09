@@ -68,7 +68,11 @@ impl GraphBuilder {
     ///
     /// Returns [`GraphError::NegativeWeight`] if validation is enabled and any
     /// edge has a negative weight.
-    pub fn from_edges(self, edges: &[(u32, u32, f64)], node_count: usize) -> Result<CsrGraph, GraphError> {
+    pub fn from_edges(
+        self,
+        edges: &[(u32, u32, f64)],
+        node_count: usize,
+    ) -> Result<CsrGraph, GraphError> {
         if self.validate {
             for (from, to, weight) in edges {
                 if *weight < 0.0 {
