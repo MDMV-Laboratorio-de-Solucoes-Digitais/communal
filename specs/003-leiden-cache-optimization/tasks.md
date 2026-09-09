@@ -300,3 +300,12 @@
 > Appended by `/speckit-converge` (2026-09-09). Each item traces to its source requirement/decision and carries its gap type. Existing tasks were NOT modified or renumbered.
 
 - [X] T071 Expose iteration count from `Partition` (add `iterations: usize` field + getter) and assert SC-007 median iteration reduction (`median_optimized ≤ 0.5 × median_baseline`) in `leiden_iteration_benchmark.rs` per SC-007 (partial)
+
+## Phase 11: Convergence
+
+> Appended by `/speckit-converge` (2026-09-09). Each item traces to its source requirement/decision and carries its gap type. Existing tasks were NOT modified or renumbered.
+
+- [X] T072 Wire `LocalMoveState::check_and_repair()` into the main loop (`mod.rs`) in debug builds so the FP-drift fallback detector repairs cached community weight sums when they diverge from full graph traversal by more than 1e-4, per FR-002, FR-011 (partial)
+- [X] T073 Add dedicated test verifying ascending-NodeId accumulation order in `compute_all` produces deterministic cross-platform results for cached community statistics per FR-011 (missing)
+- [X] T074 Add edge-case test where all nodes start in the same initial community per FR-008 (missing)
+- [X] T075 Add explicit tests verifying `beta = 0` (greedy deterministic) and `beta = 1` (uniform random) boundary behavior in refinement per FR-013, Field Interactions (missing)
