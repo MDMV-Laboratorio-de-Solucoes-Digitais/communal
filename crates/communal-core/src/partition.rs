@@ -8,6 +8,12 @@ use crate::id::NodeId;
 pub struct Partition {
     membership: Vec<u32>,
     quality: f64,
+    /// Number of iterations performed by the algorithm.
+    ///
+    /// For algorithms that support early termination (e.g., Leiden), this
+    /// reflects the actual number of iterations before convergence, which
+    /// may be less than `max_iterations`.
+    pub iterations: usize,
     /// Whether the algorithm converged (`true`) or hit the iteration limit (`false`).
     ///
     /// `false` indicates the result is the best partition found before
@@ -16,18 +22,20 @@ pub struct Partition {
 }
 
 impl Partition {
-    /// Creates a new partition from a membership vector, quality score, and convergence status.
+    /// Creates a new partition from a membership vector, quality score, iteration count, and convergence status.
     ///
     /// # Arguments
     ///
     /// * `membership` - A vector where `membership[i]` is the community ID of node `i`.
     /// * `quality` - The quality score of this partition (e.g., modularity).
+    /// * `iterations` - Number of iterations performed by the algorithm.
     /// * `converged` - Whether the algorithm converged (`true`) or hit the iteration limit (`false`).
     #[must_use]
-    pub fn new(membership: Vec<u32>, quality: f64, converged: bool) -> Self {
+    pub fn new(membership: Vec<u32>, quality: f64, iterations: usize, converged: bool) -> Self {
         Self {
             membership,
             quality,
+            iterations,
             converged,
         }
     }
@@ -45,6 +53,12 @@ impl Partition {
     #[must_use]
     pub fn quality_score(&self) -> f64 {
         self.quality
+    }
+
+    /// Returns the number of iterations performed by the algorithm.
+    #[must_use]
+    pub fn iterations(&self) -> usize {
+        self.iterations
     }
 
     /// Returns whether the algorithm converged (`true`) or hit the iteration limit (`false`).
