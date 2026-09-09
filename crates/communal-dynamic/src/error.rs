@@ -32,9 +32,7 @@ pub enum DynamicOperationError {
 impl From<DynamicOperationError> for communal_core::error::PartitionError {
     fn from(e: DynamicOperationError) -> Self {
         match e {
-            DynamicOperationError::InvalidLevel { level } => {
-                Self::InvalidLevel { level }
-            }
+            DynamicOperationError::InvalidLevel { level } => Self::InvalidLevel { level },
             _ => Self::InvalidNodeId { index: 0 },
         }
     }
