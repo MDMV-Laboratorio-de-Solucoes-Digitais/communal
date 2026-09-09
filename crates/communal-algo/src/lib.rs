@@ -19,15 +19,15 @@ pub mod fluid;
 pub mod infomap;
 /// Leiden algorithm implementation.
 pub mod leiden;
-/// Label Propagation Algorithm implementation.
-pub mod lpa;
 /// Louvain algorithm implementation.
 pub mod louvain;
+/// Label Propagation Algorithm implementation.
+pub mod lpa;
 /// Quality functions for evaluating community partitions.
 pub mod quality;
-/// Deterministic tie-breaking utilities.
-pub mod tie_breaking;
 /// Stepping mode for resumable and observable algorithm execution.
 pub mod stepping;
 /// Subscription handle for event observer registration.
 pub mod subscribe;
+/// Deterministic tie-breaking utilities.
+pub mod tie_breaking;
