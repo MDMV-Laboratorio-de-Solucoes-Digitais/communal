@@ -496,7 +496,7 @@ pub fn local_moving<G: GraphView>(
     let total_weight_m = state.total_weight_m;
 
     // Create partition from membership for delta_q calls.
-    let mut partition = Partition::new(membership.to_vec(), 0.0, false);
+    let mut partition = Partition::new(membership.to_vec(), 0.0, 0, false);
 
     let mut nodes_moved = 0;
     let mut node_order: Vec<NodeId> = (1..=u32::try_from(node_count).unwrap_or(u32::MAX))
@@ -555,7 +555,7 @@ pub fn local_moving<G: GraphView>(
             nodes_moved += 1;
 
             // Update partition to reflect the new membership.
-            partition = Partition::new(membership.to_vec(), 0.0, false);
+            partition = Partition::new(membership.to_vec(), 0.0, 0, false);
         }
     }
 
