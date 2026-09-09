@@ -100,13 +100,6 @@ pub enum AlgorithmError {
         reason: String,
     },
 
-    /// The algorithm did not converge within the allowed iterations.
-    #[error("algorithm failed to converge within {iterations} iterations")]
-    NonConvergence {
-        /// Number of iterations attempted.
-        iterations: usize,
-    },
-
     /// A general execution error occurred.
     #[error("execution error: {reason}")]
     ExecutionError {
