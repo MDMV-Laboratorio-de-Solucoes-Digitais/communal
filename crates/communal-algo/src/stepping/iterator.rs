@@ -15,7 +15,10 @@ impl StepIterator {
     /// Creates a new step iterator from a list of events.
     #[must_use]
     pub fn new(events: Vec<StepEvent>) -> Self {
-        Self { events, position: 0 }
+        Self {
+            events,
+            position: 0,
+        }
     }
 
     /// Returns the current position within the event stream.
