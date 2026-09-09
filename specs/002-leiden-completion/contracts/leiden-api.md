@@ -174,7 +174,7 @@ for community in partition.communities() {
 
 **Given**: Graph with 0 nodes
 **When**: `detect()` called
-**Then**: Returns `Ok(Partition::new(vec![], 0.0))`
+**Then**: Returns `Ok(Partition::new(vec![], 0.0, true))`
 
 ### BC-004: Edge Case Robustness
 
