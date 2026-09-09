@@ -6,8 +6,8 @@
 //! runs to prime caches, then measures wall-clock time over multiple runs and
 //! asserts the median stays within the target budget.
 
-use communal_algo::leiden::config::LeidenConfig;
 use communal_algo::leiden::Leiden;
+use communal_algo::leiden::config::LeidenConfig;
 use communal_core::csr::CsrGraph;
 use communal_core::detector::CommunityDetector;
 use std::time::Instant;
@@ -93,7 +93,11 @@ fn generate_ring_with_chords(node_count: usize, target_edges: usize) -> CsrGraph
             if distance == max_distance && node_count.is_multiple_of(2) && i >= j {
                 continue;
             }
-            edges.push((u32::try_from(i).unwrap_or(0), u32::try_from(j).unwrap_or(0), 1.0));
+            edges.push((
+                u32::try_from(i).unwrap_or(0),
+                u32::try_from(j).unwrap_or(0),
+                1.0,
+            ));
         }
     }
 
