@@ -141,7 +141,9 @@ impl ConvergenceState {
     /// - At least one consecutive iteration had zero node movement
     #[must_use]
     pub fn has_converged(&self) -> bool {
-        self.converged || self.iterations_below_threshold >= 1 || self.consecutive_zero_movement >= 1
+        self.converged
+            || self.iterations_below_threshold >= 1
+            || self.consecutive_zero_movement >= 1
     }
 
     /// Sets the converged flag to `true`.
@@ -214,7 +216,12 @@ mod tests {
 
     #[test]
     fn test_has_converged_absolute() {
-        assert!(has_converged(1.0, 1.000_000_5, 1e-6, ConvergenceMode::Absolute));
+        assert!(has_converged(
+            1.0,
+            1.000_000_5,
+            1e-6,
+            ConvergenceMode::Absolute
+        ));
         assert!(!has_converged(1.0, 1.01, 1e-6, ConvergenceMode::Absolute));
     }
 
