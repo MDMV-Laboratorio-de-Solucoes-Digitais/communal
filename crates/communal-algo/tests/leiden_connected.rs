@@ -130,7 +130,7 @@ fn graph_strategy() -> impl Strategy<Value = (Vec<(u32, u32, f64)>, u32)> {
 /// the most common trigger of this issue.
 #[test]
 fn test_all_communities_connected() {
-    let config = ProptestConfig::with_cases(50);
+    let config = ProptestConfig::with_cases(1000);
     proptest!(config, |((edges, node_count) in graph_strategy())| {
         let graph = build_graph_from_edges(&edges, node_count);
         let detector = Leiden::new(LeidenConfig {
