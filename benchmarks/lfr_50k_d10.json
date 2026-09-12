@@ -1,0 +1,12 @@
+{
+  "mu": 0.5,
+  "avg_degree": 10,
+  "d": 10,
+  "n_nodes": 50000,
+  "n": 50000,
+  "seed": 42,
+  "generator_version": "networkx-3.6.1 (LFR synthesis; regenerated per spec clarification 2026-09-10 (e))",
+  "compiler_version": "rustc 1.83.0",
+  "rustc_version": "1.83.0",
+  "float_rounding_mode": "roundTiesToEven"
+}
