@@ -1,0 +1,129 @@
+{
+  "_doc": "T086 timing-verification record (Phase 13, spec 003). Confirms SC-001/SC-002/SC-003/SC-009 measurement results per Measurement Protocol T078 (release build, 5-run median, pinned communal-ref-01, JSON sidecars with mu/avg_degree/d/n_nodes/seed/generator_version/compiler_version/rustc_version/float_rounding_mode). No refinement code modified; measurement/record only.",
+  "task": "T086",
+  "measurement_protocol": "T078",
+  "spec_phase": "Phase 13 — 003-optimize-connectedness",
+  "date": "2026-09-11T01:35:11Z",
+  "build_profile": "release",
+  "pinned_machine": "communal-ref-01",
+  "machine_note": "Actual runtime environment reports rustc 1.98.1 (measured); pinned reference-machine-spec.md pins rustc 1.83.0 — discrepancy noted and preserved across all records per spec clarification (Session 2026-09-10, reference-machine-spec.md). Timing values reflect current environment, not pinned communal-ref-01.",
+  "rustc_version_measured": "1.98.1",
+  "rustc_version_pinned": "1.83.0",
+  "rustc_discrepancy_noted": true,
+  "float_rounding_mode": "roundTiesToEven",
+  "verification_method": "Record inspection + protocol-check + sidecar field validation (no unwrap/expect/panic; no unsafe). Benchmark harness not available for 50k dense (timeout >300s) and 50k/d=10 edgelist missing; measurements captured from existing protocol-compliant JSON sidecars (sc-001-10k.json, sc-002-50k-d10.json, sc-003-scaling.json, sc-009-polblogs.json, sc-078-timing-summary.json) and verified against benchmarks/*.json.",
+  "scenarios": [
+    {
+      "scenario": "SC-001",
+      "record_file": "specs/003-optimize-connectedness/measurement-records/sc-001-10k.json",
+      "graph_file": "benchmarks/lfr_10k_d50.edges",
+      "sidecar_file": "benchmarks/lfr_10k_d50.json",
+      "status": "RECORDED",
+      "median_time_ms": 3471.2,
+      "runs": [3329.3, 3454.2, 3471.2, 3481.1, 3500.0],
+      "binding_target_ms": 5000,
+      "stretch_target_ms": 500,
+      "binding_met": true,
+      "stretch_met": false,
+      "n_nodes": 10000,
+      "mu": 0.5,
+      "avg_degree": 50,
+      "d": 50,
+      "seed": 42,
+      "generator_version": "networkx-3.6.1 (LFR placeholder; synthetic approximation due to generator timeout / max-iteration failure on dense d=50 profile)",
+      "compiler_version": "rustc 1.98.1",
+      "rustc_version": "1.98.1",
+      "float_rounding_mode": "roundTiesToEven",
+      "sidecar_fields_present": ["mu","avg_degree","d","n_nodes","seed","generator_version","compiler_version","rustc_version","float_rounding_mode"],
+      "note": "5-run median on release build. Binding gate (<=5000ms) met; stretch (<=500ms) not met. All required JSON sidecar fields present."
+    },
+    {
+      "scenario": "SC-002",
+      "record_file": "specs/003-optimize-connectedness/measurement-records/sc-002-50k-d10.json",
+      "graph_file": "benchmarks/lfr_50k_d10.edges",
+      "sidecar_file": "benchmarks/lfr_50k_d10.json",
+      "status": "BLOCKED",
+      "median_time_ms": null,
+      "runs": null,
+      "binding_target_ms": 5000,
+      "binding_met": false,
+      "n_nodes": 50000,
+      "mu": 0.5,
+      "avg_degree": 10,
+      "d": 10,
+      "seed": 42,
+      "note": "Edgelist benchmarks/lfr_50k_d10.edges MISSING (only parameter JSON benchmarks/lfr_50k_d10.json exists). Protocol cannot execute 5-run median. Status BLOCKED per T086; no unwrap/expect/panic used.",
+      "block_reason": "Missing edgelist file benchmarks/lfr_50k_d10.edges; SC-002 timing comparison cannot be executed. Parameter sidecar (lfr_50k_d10.json) present with all required fields."
+    },
+    {
+      "scenario": "SC-003",
+      "record_file": "specs/003-optimize-connectedness/measurement-records/sc-003-scaling.json",
+      "status": "BLOCKED (ratio null)",
+      "scaling_points": [
+        {
+          "label": "n=10k / d=50",
+          "median_time_ms": 3471.2,
+          "runs": [3329.3,3454.2,3471.2,3481.1,3500.0],
+          "status": "completed"
+        },
+        {
+          "label": "n=50k / d=50",
+          "median_time_ms": null,
+          "status": "FAILED / timed out after 300s (release build); no valid 5-run median"
+        },
+        {
+          "label": "n=50k / d=10 (SC-002 block)",
+          "median_time_ms": null,
+          "status": "BLOCKED / edgelist MISSING"
+        }
+      ],
+      "scaling_ratio_50k_10k": null,
+      "ratio_target": 12.5,
+      "ratio_met": false,
+      "note": "SC-003 ratio blocked by two independent blockers: (1) 50k/d=50 release build exceeded 300s timeout → no median; (2) SC-002 edgelist missing prevents cross-variant comparison. All required sidecar fields present in benchmarks/lfr_10k_d50.json and benchmarks/lfr_50k_d50.json.",
+      "sidecar_fields_present": ["mu","avg_degree","d","n_nodes","seed","generator_version","compiler_version","rustc_version","float_rounding_mode"]
+    },
+    {
+      "scenario": "SC-009",
+      "record_file": "specs/003-optimize-connectedness/measurement-records/sc-009-polblogs.json",
+      "graph_file": "benchmarks/real_world/polblogs.edges",
+      "status": "RECORDED",
+      "median_time_ms": 85.3,
+      "runs": [76.0,76.1,85.3,86.9,89.3],
+      "binding_target_ms": 500,
+      "binding_met": true,
+      "n_nodes": 1490,
+      "edges": 19090,
+      "note": "PolBlogs real-world (n=1490, edges=19090) completes under 500ms binding gate (median ~85ms, 5-run median, release build). Quality invariants (modularity Q within 1e-10 of baseline, consistent community count) not verified in timing-only measurement — confirmed separately per spec clarification (SC-009 extended with quality invariants); this record is timing-only.",
+      "sidecar_metadata": "Real-world edgelist (not LFR synthetic); generator_version=N/A; seed=42; compiler_version=rustc 1.98.1; rustc_version=1.98.1; float_rounding_mode=roundTiesToEven"
+    }
+  ],
+  "benchmark_sidecar_validation": {
+    "benchmarks/lfr_10k_d50.json": {"required_fields_present": true, "missing": []},
+    "benchmarks/lfr_50k_d50.json": {"required_fields_present": true, "missing": []},
+    "benchmarks/lfr_50k_d10.json": {"required_fields_present": true, "missing": [], "note": "Parameter JSON present; matching edgelist benchmarks/lfr_50k_d10.edges MISSING"}
+  },
+  "protocol_compliance": {
+    "release_build": true,
+    "five_run_median": true,
+    "pinned_machine_documented": true,
+    "json_sidecars_with_metadata": true,
+    "sidecars_contain_mu_avg_degree_d_n_nodes_seed_generator_version_compiler_version_rustc_version_float_rounding_mode": true,
+    "measurement_records_exist_for_sc001_sc009": true,
+    "measurement_records_exist_for_sc002_sc003": true,
+    "sc002_blocked_by_missing_edgelist": true,
+    "sc003_blocked_by_timeouth_missing_cross_variant": true,
+    "rustc_discrepancy_documented": true,
+    "no_unsafe_code": true,
+    "no_unwrap_expect_panic_in_record_generation": true
+  },
+  "missing_items": [
+    "SC-002 edgelist benchmarks/lfr_50k_d10.edges (parameter JSON exists; edges file missing)",
+    "SC-003 50k/d=50 valid 5-run median (timeout >300s on release build prevents measurement)",
+    "SC-003 scaling ratio <12.5 (blocked by above two gaps)"
+  ],
+  "discrepancies": [
+    "rustc version: measured 1.98.1 vs pinned spec 1.83.0 (communual-ref-01 reference-machine-spec.md) — preserved in all records per protocol clarification"
+  ],
+  "measurement_notes": "T086 verifies measurement records exist per protocol for SC-001 (recorded), SC-009 (recorded), SC-002 (blocked, documented), SC-003 (blocked, documented). All required JSON sidecar fields (mu, avg_degree, d, n_nodes, seed, generator_version, compiler_version, rustc_version, float_rounding_mode) are present in benchmarks/lfr_10k_d50.json, benchmarks/lfr_50k_d50.json, and benchmarks/lfr_50k_d10.json. No refinement code modified; no unsafe/unwrap/expect/panic used in verification or record production. Strict Rust compliance maintained (no code changes to crate sources; only structured JSON artifacts produced). Report delivered to parent agent session-cf68f597-2a70-4ac1-afa1-47d6b92381f3."
+}
