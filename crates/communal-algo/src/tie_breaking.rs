@@ -19,9 +19,9 @@ use communal_core::id::NodeId;
 ///
 /// The selected `NodeId`, or `None` if `nodes` is empty.
 ///
-/// # Panics
+/// # Notes
 ///
-/// Panics if `seed` is `Some` but the internal unwrap fails (should never happen).
+/// Strict-rust: no unwrap/expect/panic; deterministic selection via `StdRng` only.
 #[must_use]
 pub fn break_tie(nodes: &[NodeId], seed: Option<u64>) -> Option<NodeId> {
     if nodes.is_empty() {
