@@ -2,7 +2,7 @@
 
 **Generated:** 2026-09-05 (Updated: 2026-09-07)
 **Commit:** e335bee
-**Branch:** feat/002-03-integration-leiden
+**Branch:** feat/002-03-integration-leiden (current dev); `003-optimize-connectedness` verified — structural requirements satisfied (FR-001..FR-008, SC-001..SC-009); T021–T030 complete, spec 003 aligned. Note: measurement/verification gaps T078–T081 remain (timing/protocol verification SC-001/SC-002/SC-003/SC-009; property-based BFS/DFS SC-006/SC-008; Theorem 5 inline ref FR-005; reference-alignment assertions FR-006); see specs/003-optimize-connectedness/tasks.md.
 
 ## OVERVIEW
 
@@ -174,3 +174,4 @@ cargo run --bin communal-cli -- --help
 - `graphify-out/` is gitignored (generated dependency graph snapshots)
 - Benchmarks stored in `benchmarks/` directory (LFR-generated and real-world)
 - Performance optimization needed: cache community statistics, early termination
+- `003-optimize-connectedness` (optimize connectedness): structural requirements fully satisfied (FR-001..FR-008 / SC-001..SC-009 verified in code; BFS removed, singleton-start + isolated-vertex + R/T arithmetic, debug-only assertion; benchmarks committed). Residual measurement/verification gaps T078–T081 remain — timing/protocol verification (SC-001/SC-002/SC-003/SC-009), property-based BFS/DFS (SC-006/SC-008), inline Theorem 5 / Contract G4 reference (FR-005), and reference-alignment assertions (FR-006). See specs/003-optimize-connectedness/tasks.md.

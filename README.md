@@ -4,9 +4,7 @@ High-performance community detection framework in pure Rust.
 
 ## Status
 
-v0.1.0 — Core infrastructure complete. Leiden algorithm (local moving phase) working on all Tier 1 deterministic reference graphs.
-
-**Note:** Performance optimization needed for graphs >100 nodes. See [ROADMAP.md](ROADMAP.md) for details.
+v0.1.0 — Core infrastructure complete. Full Leiden algorithm (local moving + refinement + aggregation) working on all Tier 1 deterministic reference graphs and real-world networks up to ~1,500 nodes.
 
 ## Quick Start
 
@@ -64,6 +62,8 @@ cargo test --workspace
 # Run examples
 cargo run --example demo_leiden
 cargo run --example tier1_tests
+cargo run --example tier3_real_world
+cargo run --example quick_bench
 ```
 
 ## License

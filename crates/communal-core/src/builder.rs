@@ -11,12 +11,15 @@ use crate::error::GraphError;
 /// ```
 /// use communal_core::builder::GraphBuilder;
 ///
+/// # fn main() -> Result<(), communal_core::error::GraphError> {
 /// let edges = vec![(0, 1, 1.0), (1, 2, 1.0)];
 /// let graph = GraphBuilder::new()
 ///     .validate(true)
 ///     .undirected(true)
-///     .from_edges(&edges, 3)
-///     .unwrap();
+///     .from_edges(&edges, 3)?; // strict-rust: propagate via ?; no unwrap/expect
+/// let _ = graph;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct GraphBuilder {
