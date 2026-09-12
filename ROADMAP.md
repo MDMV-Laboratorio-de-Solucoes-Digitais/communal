@@ -1,12 +1,16 @@
 # Communal Roadmap
 
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-09
 
 ## Current Status
 
-Communal is a high-performance community detection framework in pure Rust. The core infrastructure is complete with the Leiden algorithm (Louvain-style local moving) working correctly on all Tier 1 deterministic reference graphs.
+Communal is a high-performance community detection framework in pure Rust. The core infrastructure is complete with the full Leiden algorithm (local moving + refinement + aggregation) working correctly on all Tier 1 deterministic reference graphs and real-world networks up to ~1,500 nodes.
 
-**Known performance limitation:** Algorithm is correct but slow on graphs >100 nodes. Needs optimization (see [Next Steps for Performance](#next-steps-for-performance)).
+---
+
+## Optimization / Connectedness (003-optimize-connectedness)
+
+Status: structural requirements satisfied (FR-001..FR-008 / SC-001..SC-009 verified in code; BFS removed, singleton-start + isolated-vertex + R/T arithmetic, debug-only assertion; benchmarks committed). Residual measurement/verification gaps T078–T081 remain — timing measurements per Measurement Protocol (SC-001/SC-002/SC-003/SC-009), property-based BFS/DFS result (SC-006/SC-008), inline Theorem 5 / Contract G4 reference (FR-005), and reference-alignment assertions (FR-006). See specs/003-optimize-connectedness/tasks.md.
 
 ---
 
@@ -99,7 +103,7 @@ graph [
 | Algorithm | Status | Notes |
 |-----------|--------|-------|
 | **Leiden** (local moving) | ✅ Working | Core optimization phase complete |
-| **Leiden** (refinement) | 🔄 Implemented, not integrated | Subpartition guarantee pending testing |
+| **Leiden** (refinement) | ✅ Integrated | Subpartition guarantee enforced; connected-community invariant holds |
 | **Louvain** | 📋 Planned | Similar to Leiden but without refinement |
 | **Infomap** | 📋 Planned | Information-theoretic flow-based |
 | **LPA** | 📋 Planned | Label Propagation Algorithm |
@@ -169,9 +173,18 @@ graph [
 - ✅ Property-based: quality monotonicity
 - ✅ Edge cases: empty graph, single node, single edge, disconnected components, negative weights
 - ✅ Tier 1 deterministic graphs: all 8 pass
-- ✅ Tier 3 real-world small graphs: Karate (34), Dolphins (62), Football (115) pass
-- ⚠️ Tier 2 LFR benchmarks: correct but slow on N>1000
-- ⚠️ Tier 3 real-world large graphs: timeout on N>100 (needs optimization)
+- ✅ Tier 2 LFR benchmarks: N=1000, μ=0.1 runs in ~1.2s with NMI=0.977
+- ✅ Tier 3 real-world networks: all pass
+
+| Network | Nodes | Edges | Time | Q |
+|---------|-------|-------|------|---|
+| Karate Club | 34 | 78 | 9ms | 0.0355 |
+| Dolphins | 62 | 159 | 51ms | 0.0578 |
+| Football | 115 | 613 | 170ms | 0.0369 |
+| PolBooks | 105 | 441 | 83ms | 0.1522 |
+| Les Misérables | 77 | 254 | 33ms | 0.1642 |
+| NetScience | 1,589 | 2,742 | 926ms | 0.1838 |
+| PolBlogs | 1,491 | 19,090 | 60s | 0.0441 |
 
 ### Planned Testing
 
@@ -189,34 +202,36 @@ graph [
 
 | Metric | Target | Current |
 |--------|--------|---------|
+| Leiden on N=1,589, E=2,742 (NetScience) | < 5 seconds | ✅ 926ms |
+| Leiden on N=1,491, E=19,090 (PolBlogs) | < 120 seconds | ✅ 60s |
 | Leiden on N=10⁴, E=10⁵ | < 1 second | Not benchmarked |
 | Leiden on N=10⁶, E=10⁷ | < 10 seconds | Not benchmarked |
-| Memory usage | O(V + E) | Achieved (CSR format) |
+| Memory usage | O(V + E) | ✅ Achieved (CSR format) |
 | Parallel speedup | 4-8x on 8 cores | Not implemented |
 
 ## Next Steps for Performance
 
-- Cache community degree sums and sizes (avoid recomputation)
-- Use sparse vector representation for community membership
-- Early termination when no nodes move
-- Parallel local moving (optional)
+- ✅ Cache community degree sums and sizes (avoid recomputation)
+- ✅ Early termination when no nodes move
+- Parallel local moving (optional, future)
+- Sparse vector representation for community membership (optional, future)
 
 ---
 
 ## Release Plan
 
-### v0.1.0 (Current)
+### v0.1.0 (Current — Publishable)
 - Core infrastructure (traits, CSR graph, builder)
-- Leiden algorithm (local moving phase)
+- Full Leiden algorithm (local moving + refinement + aggregation)
 - Modularity Q and CPM quality functions
 - Edge list I/O
 - Property-based and edge case tests
+- Performance: real-world networks up to ~1,500 nodes supported
 
 ### v0.2.0 (Next)
 - GML and GraphML format support
 - LFR benchmark generator
 - CLI binary
-- Full Leiden algorithm (with refinement phase)
 - NMI/ARI metrics for benchmarking
 
 ### v0.3.0
