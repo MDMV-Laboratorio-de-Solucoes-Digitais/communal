@@ -1,0 +1,100 @@
+{
+  "_note": "Independent re-measurement pass 2026-09-12. Prior records (sc-001-10k.json, sc-009-polblogs.json, sc-t099-final.json) left untouched; discrepancy with their values documented below, no numbers fabricated.",
+  "measurement_protocol": "T078/T095/T098",
+  "date": "2026-09-12T01:00:51Z",
+  "build_profile": "release",
+  "pinned_machine": "communal-ref-01 (NOT MET — actual machine below; non-protocol observation)",
+  "machine_specs": {
+    "cpu": "AMD Ryzen 7 3700U with Radeon Vega Mobile Gfx (8 threads)",
+    "memory_gb": 13,
+    "os": "Linux 7.2.4-200.fc44.x86_64 x86_64",
+    "load_avg_during_runs": "5.9-9.5 (machine heavily loaded by parallel agents)",
+    "rustc_version": "1.98.1",
+    "compiler_version": "rustc 1.98.1 (spec pins 1.83.0 — discrepancy noted)",
+    "float_rounding_mode": "roundTiesToEven (assumed IEEE-754 default; same assumption as prior records)"
+  },
+  "code_state": {
+    "branch": "dev",
+    "head": "df9b66a",
+    "worktree_dirty": true,
+    "modified_leiden_files": [
+      "crates/communal-algo/src/leiden/local_moving.rs",
+      "crates/communal-algo/src/leiden/refinement.rs",
+      "crates/communal-algo/src/quality.rs",
+      "crates/communal-algo/src/tie_breaking.rs",
+      "crates/communal-algo/tests/leiden_connected.rs"
+    ],
+    "note": "Uncommitted changes by parallel agents; timing reflects this tree, not a clean release commit."
+  },
+  "method": {
+    "harness": "/tmp/opencode/sc-timing (throwaway crate, path-deps on communal-core/communal-algo, release opt-level=3; repo Rust sources NOT modified)",
+    "timed_region": "Leiden::detect() wall time only (graph parse excluded)",
+    "config": "LeidenConfig { seed: Some(42), ..Default::default() }",
+    "per_run_timeout": "timeout 300",
+    "commands": [
+      "cargo build --release --features algo (repo, OK 12.39s)",
+      "cargo build --release (harness /tmp/opencode/sc-timing, OK)",
+      "for i in 1 2 3 4 5; do timeout 300 ./target/release/sc-timing benchmarks/lfr_10k_d50.edges 42; done",
+      "timeout 300 ./target/release/sc-timing benchmarks/lfr_10k_d50.edges 42 (6th stability run)",
+      "timeout 300 ./target/release/sc-timing benchmarks/real_world/polblogs.edges 42",
+      "timeout 120 ./target/release/sc-timing benchmarks/real_world/karate_club.edges 42",
+      "test -f benchmarks/lfr_50k_d10.edges (SC-002 presence check)"
+    ]
+  },
+  "SC-001_10k_d50": {
+    "graph_file": "benchmarks/lfr_10k_d50.edges (present, 2.4MB)",
+    "sidecar": "benchmarks/lfr_10k_d50.json",
+    "mu": 0.5,
+    "avg_degree": 50,
+    "d": 50,
+    "n_nodes": 10000,
+    "n": 10000,
+    "seed": 42,
+    "generator_version": "networkx-3.6.1 (LFR placeholder; synthetic approximation)",
+    "nodes_measured": 10000,
+    "edges_measured": 500000,
+    "runs_ms": [68325.3, 78065.7, 69433.0, 25940.3, 22721.8, 26131.0],
+    "median_5run_ms": 68325.3,
+    "median_6run_ms": 47228.2,
+    "partition": "comms=5119/10000, Q=0.000066 — IDENTICAL all 6 runs (same-seed determinism holds)",
+    "binding_target_ms": 5000,
+    "stretch_target_ms": 500,
+    "binding_met": false,
+    "stretch_met": false,
+    "status": "MEASURED — binding NOT met on this machine/tree (68.3s 5-run median; stable runs ~23-26s still >> 5s)"
+  },
+  "SC-009_polblogs_observation": {
+    "graph_file": "benchmarks/real_world/polblogs.edges (present)",
+    "runs_ms": [1167.9],
+    "note": "Single observation run only — NOT a protocol 5-run median",
+    "partition": "comms=1405/1491, Q=0.000174",
+    "binding_target_ms": 500,
+    "binding_met": false,
+    "status": "OBSERVED — 1167.9ms exceeds 500ms binding on this machine/tree (prior record 85.3ms)"
+  },
+  "harness_sanity_karate": {
+    "graph_file": "benchmarks/real_world/karate_club.edges",
+    "runs_ms": [1.3],
+    "partition": "comms=26/34, Q=0.004438",
+    "flag": "DEGENERATE — known-good Leiden on karate gives ~4 communities Q~0.42; current tree yields 26 singletons-heavy Q~0.004. Same degeneracy pattern on all graphs (Q~=0 everywhere)."
+  },
+  "QUALITY_DEGENERACY_WARNING": "All measured partitions are near-singleton with Q~=0 (10k: 5119 comms; polblogs: 1405/1491 comms; karate: 26/34 comms). Timings above measure the CURRENT DIRTY TREE's behavior, not a validated-correct implementation. Re-measure after Tier-1 regression (T011) passes. Do NOT close T012/T013 on these numbers alone.",
+  "SC-002_50k_d10": {
+    "graph_file": "benchmarks/lfr_50k_d10.edges",
+    "status": "BLOCKED — re-verified 2026-09-12: edgelist file MISSING (only benchmarks/lfr_50k_d10.json parameter sidecar present)",
+    "block_reason": "Missing edgelist file benchmarks/lfr_50k_d10.edges; measurement cannot execute.",
+    "median_ms": null,
+    "binding_met": false
+  },
+  "SC-003_scaling": {
+    "status": "BLOCKED — carried forward, NOT re-attempted (per instruction: 50k/d=50 known >300s; 10k point alone takes 23-68s on this machine so ratio < 12.5 is unachievable here regardless)",
+    "ratio_50k_10k": null,
+    "ratio_target": 12.5,
+    "ratio_met": false,
+    "block_reason": "50k/d=50 exceeds 300s timeout (prior record) + SC-002 cross-point missing edgelist."
+  },
+  "discrepancy_vs_prior_records": "Prior sc-001-10k.json (3471.2ms, binding met) and sc-009-polblogs.json (85.3ms, binding met) differ from today's runs by ~8-14x (SC-001) and ~14x (SC-009). Candidate causes: (a) this machine is loaded (load 6-9.5) vs prior conditions; (b) dirty working tree (uncommitted leiden edits) vs prior tree state; (c) unknown prior harness methodology (no command log in prior records). Both sets are honest environment-actual measurements; NEITHER is on pinned communal-ref-01 / rustc 1.83.0, so neither is protocol-binding. Prior files NOT overwritten.",
+  "files_written_this_pass": [
+    "specs/003-optimize-connectedness/measurement-records/sc-retest-2026-09-12.json"
+  ]
+}
