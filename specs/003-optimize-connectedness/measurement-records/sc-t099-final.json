@@ -1,0 +1,60 @@
+{
+  "_note": "T099 finalization — measurement finalization per Measurement Protocol T078. No false-completion claims made.",
+  "measurement_protocol": "T078",
+  "finalized_by": "speckit-implement (T099)",
+  "date": "2026-09-11",
+  "pinned_machine": "communal-ref-01 (reference; actual measured rustc 1.98.1 vs pinned 1.83.0 — discrepancy documented)",
+  "build_profile": "release",
+  "json_sidecars_complete": true,
+  "results": {
+    "SC-001 (10k/d=50)": {
+      "record_file": "sc-001-10k.json",
+      "status": "COMPLETED / finalized",
+      "median_time_ms": 3471.2,
+      "binding_target_ms": 5000,
+      "binding_met": true,
+      "stretch_target_ms": 500,
+      "stretch_met": false,
+      "graph_file": "benchmarks/lfr_10k_d50.edges (present)",
+      "sidecar_file": "benchmarks/lfr_10k_d50.json (present; fields: mu, d, n_nodes, seed, generator_version, compiler_version, rustc_version, float_rounding_mode)"
+    },
+    "SC-002 (50k/d=10)": {
+      "record_file": "sc-002-50k-d10.json",
+      "status": "BLOCKED — remains unfinalized",
+      "block_reason": "Edgelist benchmarks/lfr_50k_d10.edges MISSING; only JSON parameter sidecar (benchmarks/lfr_50k_d10.json) present. Cannot execute 5-run median measurement without edgelist.",
+      "binding_met": false
+    },
+    "SC-003 (scaling ratio <12.5)": {
+      "record_file": "sc-003-scaling.json",
+      "status": "BLOCKED — ratio cannot be computed",
+      "block_reason": "Two-point scaling blocked: (a) n=50k/d=50 release execution exceeded 300s timeout (median_time_ms null); (b) SC-002 cross-point (50k/d=10) blocked by missing edgelist. Ratio time(50k)/time(10k) remains null.",
+      "ratio_target": 12.5,
+      "ratio_met": false,
+      "scaling_points_verified": [
+        {"label":"n=10k/d=50","status":"completed (3471.2ms)"},
+        {"label":"n=50k/d=50","status":"FAILED/timeout (>300s)"},
+        {"label":"n=50k/d=10 (SC-002)","status":"BLOCKED (missing edgelist)"}
+      ]
+    },
+    "SC-009 (PolBlogs <=500ms)": {
+      "record_file": "sc-009-polblogs.json",
+      "status": "COMPLETED / finalized",
+      "median_time_ms": 85.3,
+      "binding_target_ms": 500,
+      "binding_met": true,
+      "graph_file": "benchmarks/real_world/polblogs.edges (present)",
+      "note": "Quality/structure invariants (Q within 1e-10 of baseline, consistent community count) not verified in timing-only measurement — documented per T095 notes."
+    }
+  },
+  "protocol_compliance_notes": [
+    "Release build measurements confirmed for completed points (SC-001, SC-009).",
+    "5-run median recorded where executable; blocked points documented with null median and explicit block_reason.",
+    "JSON sidecars contain required fields: mu, avg_degree/d, n_nodes/n, seed, generator_version, compiler_version, rustc_version, float_rounding_mode.",
+    "rustc discrepancy (measured 1.98.1 vs pinned spec 1.83.0) noted across all records; not masked.",
+    "No false-completion claim made for SC-002 / SC-003; status BLOCKED preserved per clarification 2026-09-11."
+  ],
+  "remaining_work_after_t099": [
+    "SC-002: generate/commit benchmarks/lfr_50k_d10.edges (or document permanent unavailability); then re-run 5-run median.",
+    "SC-003: resolve 50k/d=50 timeout (performance optimization or longer timeout) and complete SC-002 cross-point; then compute ratio < 12.5."
+  ]
+}
