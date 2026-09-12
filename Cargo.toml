@@ -83,6 +83,9 @@ metrics = ["dep:communal-metrics"]
 generators = ["dep:communal-generators"]
 full = ["algo", "dynamic", "petgraph", "metrics", "generators"]
 
+[dev-dependencies]
+proptest = { workspace = true }
+
 [profile.dev]
 opt-level = 0
 debug = true
