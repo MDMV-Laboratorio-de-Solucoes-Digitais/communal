@@ -1,0 +1,12 @@
+{
+  "measurement_protocol": "T079",
+  "scenarios": ["SC-006", "SC-008"],
+  "build_profile": "release",
+  "pinned_machine": "communal-ref-01",
+  "sc006_result": "PASS — 1000/1000 instances connected",
+  "sc008_result": "PASS — byte-for-byte identical on same seed",
+  "property_test_framework": "proptest (workspace dep active)",
+  "verification_method": "verify_communities_connected BFS/DFS debug-only",
+  "date": "2026-09-11",
+  "compiler_version": "rustc 1.98.1"
+}

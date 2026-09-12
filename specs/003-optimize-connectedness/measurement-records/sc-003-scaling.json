@@ -1,0 +1,72 @@
+{
+  "_note": "Measured per Measurement Protocol T078; release build; 5-run median.",
+  "measurement_protocol": "T078",
+  "scenario": "SC-003 (scaling ratio < 12.5)",
+  "build_profile": "release",
+  "pinned_machine": "communal-ref-01",
+  "date": "2026-09-11T01:35:11Z",
+  "scaling_points": [
+    {
+      "label": "n=10k / d=50",
+      "graph_file": "benchmarks/lfr_10k_d50.edges",
+      "median_time_ms": 3471.2,
+      "runs": [
+        3329.3,
+        3454.2,
+        3471.2,
+        3481.1,
+        3500.0
+      ],
+      "mu": 0.5,
+      "avg_degree": 50,
+      "d": 50,
+      "n_nodes": 10000,
+      "n": 10000,
+      "seed": 42,
+      "status": "completed"
+    },
+    {
+      "label": "n=50k / d=50",
+      "graph_file": "benchmarks/lfr_50k_d50.edges",
+      "median_time_ms": null,
+      "runs": null,
+      "mu": 0.5,
+      "avg_degree": 50,
+      "d": 50,
+      "n_nodes": 50000,
+      "n": 50000,
+      "seed": 42,
+      "status": "FAILED / timed out after 300s (release build); cannot compute ratio",
+      "failure_reason": "Algorithm execution exceeded measurement timeout (>300s) on dense 50k-node graph; no valid 5-run median available. Ratio time(50k)/time(10k) cannot be computed."
+    },
+    {
+      "label": "n=50k / d=10 (SC-002 block)",
+      "graph_file": "benchmarks/lfr_50k_d10.edges",
+      "median_time_ms": null,
+      "runs": null,
+      "mu": 0.5,
+      "avg_degree": 10,
+      "d": 10,
+      "n_nodes": 50000,
+      "n": 50000,
+      "seed": 42,
+      "status": "BLOCKED / edgelist MISSING (benchmarks/lfr_50k_d10.edges not present); measurement cannot execute"
+    }
+  ],
+  "scaling_ratio_50k_10k": null,
+  "ratio_target": 12.5,
+  "ratio_met": false,
+  "note_on_missing_variant": "SC-002 comparison requires 50k/d=10 profile; benchmarks/lfr_50k_d10.json exists (parameters recorded) but benchmarks/lfr_50k_d10.edges is MISSING. SC-002 timing comparison cannot be executed without the edgelist file. SC-003 scaling ratio blocked: 50k/d=50 timed out >300s (ratio null) and SC-002 (50k/d=10) blocked by missing edgelist benchmarks/lfr_50k_d10.edges. T086 confirms both blockers.",
+  "generator_version": "networkx-3.6.1 (LFR placeholder; synthetic approximation due to generator timeout / max-iteration failure on dense d=50 profile)",
+  "compiler_version": "rustc 1.98.1",
+  "rustc_version": "1.98.1",
+  "float_rounding_mode": "roundTiesToEven",
+  "sc-002_blocked": {
+    "scenario": "SC-002",
+    "reason": "benchmarks/lfr_50k_d10.edges missing",
+    "date": "2026-09-11",
+    "status": "BLOCKED"
+  },
+  "sc-003-ratio-blocked": true,
+  "sc-003-ratio-block-reason": "50k timeout >300s prevents ratio; SC-002 edgelist missing prevents cross-comparison"
+}

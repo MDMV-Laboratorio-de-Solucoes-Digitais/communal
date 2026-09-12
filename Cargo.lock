@@ -177,6 +177,7 @@ dependencies = [
  "communal-generators",
  "communal-metrics",
  "communal-petgraph",
+ "proptest",
 ]
 
 [[package]]
