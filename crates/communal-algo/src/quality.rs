@@ -77,7 +77,10 @@ impl Modularity {
         }
 
         let node_idx = node.index();
-        let k_v = node_degrees.get(node_idx).copied().unwrap_or(0.0);
+        let k_v = match node_degrees.get(node_idx) {
+            Some(&v) => v,
+            None => 0.0,
+        };
 
         // Compute w_to_target: sum of edge weights from node to nodes in target_community
         let w_to_target: f64 = graph
@@ -87,7 +90,10 @@ impl Modularity {
             .sum();
 
         // Get current community of the node
-        let current_community = partition.community_of(node).copied().unwrap_or(0);
+        let current_community = match partition.community_of(node) {
+            Some(&v) => v,
+            None => 0,
+        };
 
         // Compute w_to_current: sum of edge weights from node to nodes in
         // current_community, excluding self-loops
@@ -112,6 +118,18 @@ impl Modularity {
         let loss_current = w_to_current - (k_v * (sum_degree_current - k_v)) / two_m;
 
         (gain_target - loss_current) / two_m
+    }
+}
+
+impl QualityFunction {
+    /// Returns the resolution parameter γ for this quality function.
+    ///
+    /// For `Modularity` and `Cpm` this is the `gamma` value; `MapEquation` keeps gamma unchanged.
+    #[must_use]
+    pub const fn resolution(self, gamma: f64) -> f64 {
+        match self {
+            Self::Modularity | Self::Cpm | Self::MapEquation => gamma,
+        }
     }
 }
 
@@ -259,7 +277,10 @@ impl Cpm {
             .sum();
 
         // Get current community of the node
-        let current_community = partition.community_of(node).copied().unwrap_or(0);
+        let current_community = match partition.community_of(node) {
+            Some(&v) => v,
+            None => 0,
+        };
 
         // Compute w_to_current: sum of edge weights from node to nodes in
         // current_community, excluding self-loops

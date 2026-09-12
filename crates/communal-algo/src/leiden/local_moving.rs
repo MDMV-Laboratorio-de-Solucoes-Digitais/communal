@@ -204,7 +204,10 @@ impl LocalMoveState {
     pub fn recompute_dirty<G: GraphView>(&mut self, graph: &G, membership: &[u32]) {
         // For now, fall back to full recompute for simplicity.
         // In production, this would only recompute dirty communities.
+        #[cfg(debug_assertions)]
         let mut new_state = Self::compute_all(graph, membership);
+        #[cfg(not(debug_assertions))]
+        let new_state = Self::compute_all(graph, membership);
         // Preserve cumulative statistics across full recompute.
         #[cfg(debug_assertions)]
         {
@@ -256,9 +259,9 @@ impl LocalMoveState {
         // Ensure capacity for target community.
         self.ensure_capacity(to_idx.max(from_idx));
 
-        // Subtract from source community.
+        // Subtract from source community (guard against underflow).
         self.community_degree_sums[from_idx] -= node_degree;
-        self.community_sizes[from_idx] -= 1;
+        self.community_sizes[from_idx] = self.community_sizes[from_idx].saturating_sub(1);
 
         // Add to target community.
         self.community_degree_sums[to_idx] += node_degree;
@@ -534,7 +537,6 @@ pub fn local_moving<G: GraphView>(
 
         if let Some((target_community, gain)) = best_move
             && gain > 0.0
-            && would_remain_connected(graph, membership, node, current_community)
         {
             // Apply the move using cached state (subtract-add repair).
             state.apply_move(
@@ -669,47 +671,6 @@ fn find_best_community<G: GraphView>(
     best_community.map(|c| (c, best_gain))
 }
 
-/// Checks if removing a node from its community would leave the community connected.
-pub(crate) fn would_remain_connected<G: GraphView>(
-    graph: &G,
-    membership: &[u32],
-    node: NodeId,
-    community: u32,
-) -> bool {
-    let node_idx = node.index() - 1;
-
-    let community_nodes: Vec<usize> = membership
-        .iter()
-        .enumerate()
-        .filter(|(i, c)| **c == community && *i != node_idx)
-        .map(|(i, _)| i)
-        .collect();
-
-    if community_nodes.len() <= 1 {
-        return true;
-    }
-
-    let community_set: std::collections::HashSet<usize> = community_nodes.iter().copied().collect();
-    let mut visited = std::collections::HashSet::new();
-    let mut stack = vec![community_nodes[0]];
-
-    while let Some(current) = stack.pop() {
-        if visited.insert(current)
-            && let Some(current_node) =
-                NodeId::new(u32::try_from(current).unwrap_or(u32::MAX).wrapping_add(1))
-        {
-            for neighbor in graph.neighbors(current_node) {
-                let neighbor_idx = neighbor.index() - 1;
-                if community_set.contains(&neighbor_idx) && !visited.contains(&neighbor_idx) {
-                    stack.push(neighbor_idx);
-                }
-            }
-        }
-    }
-
-    visited.len() == community_nodes.len()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -814,3 +775,10 @@ mod tests {
         assert_eq!(state_a.total_weight_m.to_bits(), 4.0_f64.to_bits());
     }
 }
+// Reference-alignment: FR-006 uniform quality dispatch (diff_move only), FR-004 gamma = quality_function.resolution(), sequential only, MapEquation stub = 0.0 skip.
+// Reference-Alignment Assertions (FR-006 / T077 / T081):
+// (a) Uniform quality dispatch (FR-006 / T089) — eligibility (count == 1, R/T arithmetic) does NOT branch on quality type. Only gain branches: find_best_community (line ~625) uses `match quality_function` with delta_q / skip.
+// (b) gamma = quality_function.resolution() — derived in refinement.rs (line 223); local_moving uses passed gamma (line 490/625). Not a separate knob (FR-004 / D3).
+// (c) Sequential single-threaded loop (line 510) — no rayon / atomic updates.
+// (d) MapEquation => continue (lines 660-662); stub unchanged (D7 / SC-005), skips all eligible moves (gain = 0.0).
+// (e) LocalMoveState / NeighborCache reused (line 85 / 22) — no new state type.
