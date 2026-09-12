@@ -33,3 +33,12 @@ graphify-out/
 .prompts/
 .omo/
 .dsh/
+
+# Local compiled test binaries (rebuilt via cargo; never commit)
+test_unwrap_or
+
+# Large benchmark edge lists (regenerate via LFR harness; small JSON summaries stay tracked)
+benchmarks/*.edges
+
+# opencode scaffolding dependencies (commands/*.md stay tracked; deps not)
+.opencode/node_modules/
