@@ -1,0 +1,76 @@
+{
+  "_doc": "T086 measurement verification summary per Measurement Protocol T078. Confirms SC-001/SC-002/SC-003/SC-009 timing records exist, notes blocked items, and flags rustc discrepancy.",
+  "task": "T086",
+  "measurement_protocol": "T078",
+  "summary_date": "2026-09-11",
+  "build_profile": "release",
+  "pinned_machine_spec": "communal-ref-01",
+  "machine_note": "Actual environment reports rustc 1.98.1; pinned spec references rustc 1.83.0 — discrepancy noted across all measurement files.",
+  "rustc_version_measured": "1.98.1",
+  "rustc_version_pinned": "1.83.0",
+  "rustc_discrepancy_noted": true,
+  "scenarios": [
+    {
+      "scenario": "SC-001",
+      "record_file": "sc-001-10k.json",
+      "status": "RECORDED",
+      "median_time_ms": 3471.2,
+      "binding_target_ms": 5000,
+      "binding_met": true,
+      "stretch_target_ms": 500,
+      "stretch_met": false,
+      "note": "Binding met (<5000ms); stretch not met (<500ms). 5-run median on release build."
+    },
+    {
+      "scenario": "SC-002",
+      "record_file": "sc-002-50k-d10.json",
+      "status": "BLOCKED",
+      "median_time_ms": null,
+      "binding_target_ms": 5000,
+      "binding_met": false,
+      "note": "Edgelist benchmarks/lfr_50k_d10.edges is MISSING. Measurement cannot execute. Status BLOCKED per T086."
+    },
+    {
+      "scenario": "SC-003",
+      "record_file": "sc-003-scaling.json",
+      "status": "BLOCKED (ratio null)",
+      "median_time_ms_10k": 3471.2,
+      "median_time_ms_50k": null,
+      "scaling_ratio_50k_10k": null,
+      "ratio_target": 12.5,
+      "ratio_met": false,
+      "note": "SC-003 ratio blocked: 50k/d=50 failed timeout >300s (release build), so no valid 5-run median; ratio cannot be computed. SC-002 blocked by missing edgelist prevents cross-variant comparison."
+    },
+    {
+      "scenario": "SC-009",
+      "record_file": "sc-009-polblogs.json",
+      "status": "RECORDED",
+      "median_time_ms": 85.3,
+      "binding_target_ms": 500,
+      "binding_met": true,
+      "note": "PolBlogs real-world (n=1490, edges=19090) completes under 500ms binding gate. Quality invariants not verified in timing-only measurement."
+    }
+  ],
+  "protocol_compliance": {
+    "release_build": true,
+    "five_run_median": true,
+    "pinned_machine_documented": true,
+    "json_sidecars_present": true,
+    "sidecar_files": [
+      "sc-001-10k.json",
+      "sc-002-50k-d10.json",
+      "sc-003-scaling.json",
+      "sc-009-polblogs.json",
+      "sc-078-timing-summary.json"
+    ]
+  },
+  "missing_items": [
+    "SC-002 edgelist benchmarks/lfr_50k_d10.edges (parameter JSON exists but edges file missing)",
+    "SC-003 50k/d=50 timing (timeout >300s prevents median and ratio)"
+  ],
+  "discrepancies": [
+    "rustc version: measured 1.98.1 vs pinned spec 1.83.0 on communal-ref-01"
+  ],
+  "float_rounding_mode": "roundTiesToEven",
+  "measurement_notes": "T086 verifies that measurement records exist per protocol for SC-001, SC-003 (partial), and SC-009. SC-002 is BLOCKED by missing edgelist; SC-003 scaling ratio is BLOCKED by 50k timeout (>300s). No unwrap/expect/panic used in verification; results returned as structured JSON records."
+}
